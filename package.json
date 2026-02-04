@@ -1,0 +1,58 @@
+{
+  "name": "boond-mcp",
+  "version": "0.1.0",
+  "description": "TypeScript MCP server for BoondManager API - 94+ tools across 8 business domains",
+  "type": "module",
+  "main": "./build/index.js",
+  "bin": {
+    "boond-mcp": "./build/index.js"
+  },
+  "files": [
+    "build/",
+    "README.md",
+    "SETUP.md",
+    "DISTRIBUTION.md",
+    "package.json",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && chmod 755 build/index.js",
+    "dev": "tsc --watch",
+    "start": "node build/index.js",
+    "dist": "bash scripts/dist.sh"
+  },
+  "keywords": [
+    "mcp",
+    "boondmanager",
+    "api",
+    "model-context-protocol",
+    "claude",
+    "hr",
+    "crm",
+    "projects",
+    "finance",
+    "time-tracking"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/boond-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/boond-mcp/issues"
+  },
+  "homepage": "https://github.com/yourusername/boond-mcp#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "typescript": "^5.3.3"
+  }
+}
