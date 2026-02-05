@@ -508,3 +508,179 @@ Tools are organized by business domain:
 - **System**: apps, settings, alerts
 
 Each domain should follow the same patterns and structure.
+
+## Troubleshooting
+
+### Git Issues
+
+**"fatal: not a git repository" in worktree**
+```bash
+# Navigate to the worktree directory
+cd /path/to/boond-mcp-worktrees/feature-name
+
+# Verify worktree is properly linked
+git worktree list
+
+# If not listed, recreate from main worktree
+cd /path/to/boond-mcp
+git worktree add ../boond-mcp-worktrees/feature-name feature/name
+```
+
+**Wrong Git user in commits**
+```bash
+# Check current config
+git config --local user.name
+git config --local user.email
+
+# Fix if incorrect
+git config --local user.name "imarinmed"
+git config --local user.email "imarinmed@users.noreply.github.com"
+
+# Amend last commit if needed
+git commit --amend --author="imarinmed <imarinmed@users.noreply.github.com>"
+```
+
+**Merge conflicts in worktrees**
+```bash
+# From the worktree directory
+git fetch origin
+git rebase origin/main
+
+# Resolve conflicts, then
+git add .
+git rebase --continue
+```
+
+### Build Issues
+
+**TypeScript compilation errors**
+```bash
+# Check for type errors
+bunx tsc --noEmit
+
+# Common fixes:
+# 1. Missing type imports - add proper import statements
+# 2. Implicit any - add explicit types
+# 3. Missing properties - check interface definitions
+```
+
+**ESLint errors**
+```bash
+# Run linter to see errors
+bun run lint
+
+# Auto-fix many issues
+bun run lint:fix
+
+# For remaining errors, manually fix or disable with comment:
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const data: any = fetchData();
+```
+
+**Prettier formatting issues**
+```bash
+# Check formatting
+bun run format:check
+
+# Auto-format all files
+bun run format
+```
+
+### MCP Server Issues
+
+**"BOOND_API_TOKEN not set" error**
+```bash
+# Create .env file
+cp .env.example .env
+
+# Edit and add your token
+BOOND_API_TOKEN=your_token_here
+
+# Or set as environment variable
+export BOOND_API_TOKEN=your_token_here
+```
+
+**Server crashes on startup**
+```bash
+# Check for stdout output (should only use stderr)
+BOOND_API_TOKEN=test bun run build/index.js 2>/dev/null
+# Should produce NO output
+
+# Check stderr for errors
+BOOND_API_TOKEN=test bun run build/index.js 2>&1 | head -20
+```
+
+**Tools not appearing in Claude Desktop**
+```bash
+# 1. Verify build is successful
+bun run build
+
+# 2. Check tool count
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | bun run build/index.js 2>/dev/null | jq '.result.tools | length'
+
+# 3. Restart Claude Desktop after config changes
+# 4. Check Claude Desktop logs for errors
+```
+
+### API Issues
+
+**401 Authentication errors**
+- Verify `BOOND_API_TOKEN` is correct
+- Check token hasn't expired
+- Ensure token has required permissions
+
+**404 Not Found errors**
+- Verify resource ID exists
+- Check API endpoint URL
+- Ensure resource hasn't been deleted
+
+**422 Validation errors**
+- Check required fields are provided
+- Verify data types match schema
+- Review error message for specific field issues
+
+**Timeout errors**
+- Default timeout is 30 seconds
+- Check network connectivity
+- Consider increasing timeout for slow operations:
+  ```typescript
+  const client = new BoondAPIClient(token, undefined, 60000); // 60s timeout
+  ```
+
+### Development Workflow
+
+**Pre-commit checks failing**
+```bash
+# Run all validation steps
+bun run validate
+
+# Or run individually
+bun run typecheck
+bun run lint
+bun run format:check
+bun run build
+```
+
+**Worktree out of sync with main**
+```bash
+# From worktree directory
+git fetch origin
+git rebase origin/main
+
+# Or merge
+git merge origin/main
+```
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. Check the [GitHub Issues](https://github.com/imarinmed/boond-mcp/issues)
+2. Review error messages carefully
+3. Check logs with verbose output
+4. Create a minimal reproduction case
+5. Open a new issue with:
+   - Error message
+   - Steps to reproduce
+   - Expected vs actual behavior
+   - Environment details (OS, Node/Bun version)
