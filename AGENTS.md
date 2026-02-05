@@ -32,6 +32,142 @@ src/
     └── error-handling.ts  # Reusable error handlers
 ```
 
+## Git Workflow
+
+### Git Configuration
+
+**CRITICAL: Always use the imarinmed GitHub account for commits:**
+
+```bash
+# Verify your Git configuration
+git config --local user.name  # Should output: imarinmed
+git config --local user.email # Should output: imarinmed@users.noreply.github.com
+
+# If not set correctly, configure them:
+git config --local user.name "imarinmed"
+git config --local user.email "imarinmed@users.noreply.github.com"
+```
+
+### Git Worktrees
+
+This project uses **Git worktrees** for parallel development. Worktrees allow you to work on multiple features simultaneously without switching branches.
+
+#### Worktree Structure
+
+```
+boond-mcp/                    (main worktree - main branch)
+├── src/
+├── build/
+└── ...
+
+boond-mcp-worktrees/          (worktrees directory)
+├── feature-calendar/         (feature/calendar branch)
+├── refactor-api-client/      (refactor/api-client branch)
+└── docs-api-docs/            (docs/api-docs branch)
+```
+
+#### Creating Worktrees
+
+```bash
+# Create a new worktree for a feature
+git worktree add ../boond-mcp-worktrees/feature-name -b feature/name
+
+# Example: Create worktree for calendar feature
+git worktree add ../boond-mcp-worktrees/feature-calendar -b feature/calendar
+
+# Work on the feature
+cd ../boond-mcp-worktrees/feature-calendar
+# ... make changes ...
+git add .
+git commit -m "feat(time): add calendar integration tools"
+
+# Push from main worktree
+cd ../../boond-mcp
+git push origin feature/calendar
+```
+
+#### Listing Worktrees
+
+```bash
+git worktree list
+```
+
+#### Removing Worktrees
+
+```bash
+# When done with a feature, remove the worktree
+git worktree remove ../boond-mcp-worktrees/feature-calendar
+
+# Also delete the branch if merged
+git branch -d feature/calendar
+```
+
+### Branch Naming Convention
+
+Follow these patterns for branch names:
+
+- `feature/<domain>-<description>` - New features (e.g., `feature/time-calendar`)
+- `fix/<domain>-<description>` - Bug fixes (e.g., `fix/hr-candidate-search`)
+- `refactor/<component>` - Code refactoring (e.g., `refactor/api-client`)
+- `docs/<section>` - Documentation updates (e.g., `docs/api-reference`)
+- `chore/<task>` - Maintenance tasks (e.g., `chore/update-dependencies`)
+
+### Commit Message Convention
+
+Follow **Conventional Commits** specification:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+#### Types
+
+- `feat`: New features or tools
+- `fix`: Bug fixes
+- `refactor`: Code restructuring without behavior change
+- `docs`: Documentation updates
+- `style`: Code style changes (formatting, indentation)
+- `test`: Adding or updating tests
+- `chore`: Build process, dependencies, tooling
+- `perf`: Performance improvements
+
+#### Scopes
+
+Use domain or component names:
+- `hr`, `crm`, `finance`, `projects`, `time`, `admin`, `documents`, `system`
+- `api`, `types`, `utils`, `schemas`
+
+#### Examples
+
+```bash
+# Good commit messages
+git commit -m "feat(time): add calendar event creation tool"
+git commit -m "fix(hr): resolve candidate search pagination bug"
+git commit -m "refactor(api): split client into domain modules"
+git commit -m "docs: add Git workflow documentation"
+git commit -m "chore: update TypeScript to 5.3"
+
+# Bad commit messages
+git commit -m "update"                    # Too vague
+git commit -m "fixed stuff"               # Not descriptive
+git commit -m "WIP"                       # Work-in-progress not allowed
+```
+
+### Pre-commit Checklist
+
+Before committing, ensure:
+
+- [ ] `bunx tsc --noEmit` passes (no TypeScript errors)
+- [ ] Code follows the established patterns in AGENTS.md
+- [ ] Error handling uses utility functions
+- [ ] Schemas are defined in `types/schemas.ts` (not inline)
+- [ ] Commit message follows convention
+- [ ] Git user is configured as `imarinmed`
+
 ## Best Practices
 
 ### 1. Error Handling
