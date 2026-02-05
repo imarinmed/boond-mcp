@@ -838,6 +838,311 @@ describe("9. Total Tool Count Verification", () => {
       (call: any[]) => typeof call[2] === "function"
     );
 
-    expect(allHaveHandlers).toBe(true);
-  });
-});
+     expect(allHaveHandlers).toBe(true);
+   });
+ });
+
+ /**
+  * SECTION 10: Handler Execution & Error Handling Tests
+  */
+ describe("10. Handler Execution & Error Handling", () => {
+   let mockServer: MockMcpServer;
+   let mockClient: BoondAPIClient;
+
+   beforeEach(() => {
+     mockServer = {
+       registerTool: vi.fn(),
+     };
+     mockClient = new BoondAPIClient("test-token");
+   });
+
+   describe("Search Handler Execution", () => {
+     it("should call search handler when registered tool is invoked", async () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const searchCall = calls.find((call: any[]) => call[0] === "boond_candidates_search");
+
+       expect(searchCall).toBeDefined();
+       expect(typeof searchCall[2]).toBe("function");
+     });
+
+     it("should handle search with missing required parameters", async () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const searchCall = calls.find((call: any[]) => call[0] === "boond_candidates_search");
+
+       if (searchCall) {
+         const handler = searchCall[2];
+         const result = await handler({});
+
+         expect(result).toBeDefined();
+         expect(result.isError).toBe(true);
+       }
+     });
+   });
+
+   describe("Get by ID Handler Execution", () => {
+     it("should call get handler when registered tool is invoked", async () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const getCall = calls.find((call: any[]) => call[0] === "boond_candidates_get");
+
+       expect(getCall).toBeDefined();
+       expect(typeof getCall[2]).toBe("function");
+     });
+
+     it("should reject get request with missing ID", async () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const getCall = calls.find((call: any[]) => call[0] === "boond_candidates_get");
+
+       if (getCall) {
+         const handler = getCall[2];
+         const result = await handler({});
+
+         expect(result).toBeDefined();
+         expect(result.isError).toBe(true);
+       }
+     });
+   });
+
+   describe("Create Handler Execution", () => {
+     it("should call create handler when registered tool is invoked", async () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const createCall = calls.find((call: any[]) => call[0] === "boond_candidates_create");
+
+       expect(createCall).toBeDefined();
+       expect(typeof createCall[2]).toBe("function");
+     });
+
+     it("should reject create request with missing required fields", async () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const createCall = calls.find((call: any[]) => call[0] === "boond_candidates_create");
+
+       if (createCall) {
+         const handler = createCall[2];
+         const result = await handler({});
+
+         expect(result).toBeDefined();
+         expect(result.isError).toBe(true);
+       }
+     });
+   });
+
+   describe("Update Handler Execution", () => {
+     it("should call update handler when registered tool is invoked", async () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const updateCall = calls.find((call: any[]) => call[0] === "boond_candidates_update");
+
+       expect(updateCall).toBeDefined();
+       expect(typeof updateCall[2]).toBe("function");
+     });
+
+     it("should reject update request with missing ID", async () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const updateCall = calls.find((call: any[]) => call[0] === "boond_candidates_update");
+
+       if (updateCall) {
+         const handler = updateCall[2];
+         const result = await handler({});
+
+         expect(result).toBeDefined();
+         expect(result.isError).toBe(true);
+       }
+     });
+   });
+
+   describe("Input Schema Validation", () => {
+     it("should have valid input schemas for all candidate tools", () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const allHaveValidSchemas = calls.every((call: any[]) => {
+         const schema = call[1].inputSchema;
+         return schema && typeof schema === "object";
+       });
+
+       expect(allHaveValidSchemas).toBe(true);
+     });
+
+     it("should have valid input schemas for company tools", () => {
+       registerCompanyTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const allHaveValidSchemas = calls.every((call: any[]) => {
+         const schema = call[1].inputSchema;
+         return schema && typeof schema === "object";
+       });
+
+       expect(allHaveValidSchemas).toBe(true);
+     });
+
+     it("should have valid input schemas for invoice tools", () => {
+       registerInvoiceTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const allHaveValidSchemas = calls.every((call: any[]) => {
+         const schema = call[1].inputSchema;
+         return schema && typeof schema === "object";
+       });
+
+       expect(allHaveValidSchemas).toBe(true);
+     });
+
+     it("should have valid input schemas for project tools", () => {
+       registerProjectTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const allHaveValidSchemas = calls.every((call: any[]) => {
+         const schema = call[1].inputSchema;
+         return schema && typeof schema === "object";
+       });
+
+       expect(allHaveValidSchemas).toBe(true);
+     });
+
+     it("should have valid input schemas for time report tools", () => {
+       registerTimeReportTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const allHaveValidSchemas = calls.every((call: any[]) => {
+         const schema = call[1].inputSchema;
+         return schema && typeof schema === "object";
+       });
+
+       expect(allHaveValidSchemas).toBe(true);
+     });
+   });
+
+   describe("Tool Naming Conventions", () => {
+     it("should follow boond_[domain]_[action] naming pattern", () => {
+       registerCandidateTools(mockServer as any, mockClient);
+       registerCompanyTools(mockServer as any, mockClient);
+       registerInvoiceTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const allFollowPattern = calls.every((call: any[]) => {
+         const toolName = call[0];
+         // Pattern: boond_<domain>_<action>
+         return /^boond_[a-z]+_[a-z]+$/.test(toolName);
+       });
+
+       expect(allFollowPattern).toBe(true);
+     });
+
+     it("should use lowercase domain names", () => {
+       registerCandidateTools(mockServer as any, mockClient);
+       registerOpportunityTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const allLowercase = calls.every((call: any[]) => {
+         const toolName = call[0];
+         return toolName === toolName.toLowerCase();
+       });
+
+       expect(allLowercase).toBe(true);
+     });
+   });
+
+   describe("Tool Description Quality", () => {
+     it("should have non-empty descriptions for all tools", () => {
+       registerCandidateTools(mockServer as any, mockClient);
+       registerCompanyTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const allHaveDescriptions = calls.every((call: any[]) => {
+         const description = call[1].description;
+         return description && description.trim().length > 0;
+       });
+
+       expect(allHaveDescriptions).toBe(true);
+     });
+
+     it("should have descriptions longer than 10 characters", () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const allDescriptionsLongEnough = calls.every((call: any[]) => {
+         const description = call[1].description;
+         return description && description.length > 10;
+       });
+
+       expect(allDescriptionsLongEnough).toBe(true);
+     });
+   });
+
+   describe("Handler Return Type", () => {
+     it("should return error response for invalid parameters", async () => {
+       registerCandidateTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const getCall = calls.find((call: any[]) => call[0] === "boond_candidates_get");
+
+       if (getCall) {
+         const handler = getCall[2];
+         const result = await handler({ id: "" }); // empty ID
+
+         expect(result).toBeDefined();
+         expect(result.isError).toBe(true);
+         expect(result.content).toBeDefined();
+       }
+     });
+   });
+
+   describe("Domain Tool Consistency", () => {
+     it("should have consistent tool naming across HR domain", () => {
+       registerCandidateTools(mockServer as any, mockClient);
+       registerContactTools(mockServer as any, mockClient);
+       registerResourceTools(mockServer as any, mockClient);
+       registerContractTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const hrDomainCalls = calls.filter((call: any[]) => call[0].includes("_candidates_") || call[0].includes("_contacts_") || call[0].includes("_resources_") || call[0].includes("_contracts_"));
+
+       // Each subdomain should have similar action patterns (search, get, create, update)
+       const actionPatterns = new Set<string>();
+       hrDomainCalls.forEach((call: any[]) => {
+         const parts = call[0].split("_");
+         const action = parts[parts.length - 1];
+         actionPatterns.add(action);
+       });
+
+       // Should have standard CRUD actions
+       expect(actionPatterns.has("search")).toBe(true);
+       expect(actionPatterns.has("get")).toBe(true);
+       expect(actionPatterns.has("create")).toBe(true);
+       expect(actionPatterns.has("update")).toBe(true);
+     });
+
+     it("should have consistent tool naming across Finance domain", () => {
+       registerInvoiceTools(mockServer as any, mockClient);
+       registerPurchaseTools(mockServer as any, mockClient);
+       registerOrderTools(mockServer as any, mockClient);
+       registerBankingTools(mockServer as any, mockClient);
+
+       const calls = mockServer.registerTool.mock.calls;
+       const actionPatterns = new Set<string>();
+       calls.forEach((call: any[]) => {
+         const parts = call[0].split("_");
+         const action = parts[parts.length - 1];
+         actionPatterns.add(action);
+       });
+
+       // Should have standard financial actions
+       expect(actionPatterns.has("search")).toBe(true);
+       expect(actionPatterns.has("get")).toBe(true);
+     });
+   });
+ });
