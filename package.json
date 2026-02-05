@@ -19,7 +19,13 @@
     "build": "tsc && chmod 755 build/index.js",
     "dev": "tsc --watch",
     "start": "node build/index.js",
-    "dist": "bash scripts/dist.sh"
+    "dist": "bash scripts/dist.sh",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "validate": "bun run typecheck && bun run lint && bun run format:check"
   },
   "keywords": [
     "mcp",
@@ -53,6 +59,10 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
     "typescript": "^5.3.3"
   }
 }
