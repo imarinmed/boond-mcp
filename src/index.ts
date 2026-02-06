@@ -43,6 +43,7 @@ import {
   registerFullTextSearchTool,
   registerFacetedSearchTool,
   registerDateRangeSearchTool,
+  registerAdvancedSearchTool,
 } from './tools/index.js';
 
 /**
@@ -111,6 +112,7 @@ async function main(): Promise<void> {
     registerFullTextSearchTool(server, apiClient);
     registerFacetedSearchTool(server, apiClient);
     registerDateRangeSearchTool(server, apiClient);
+    registerAdvancedSearchTool(server, apiClient);
 
     // Initialize transport and connect
     const transport = new StdioServerTransport();

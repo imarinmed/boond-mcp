@@ -38,4 +38,5 @@ export {
   registerFullTextSearchTool,
   registerFacetedSearchTool,
   registerDateRangeSearchTool,
+  registerAdvancedSearchTool,
 } from './system/index.js';
