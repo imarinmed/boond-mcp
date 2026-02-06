@@ -6,11 +6,20 @@ export {
   registerBulkCreateCandidateTool,
   registerBulkUpdateCandidateTool,
   registerBulkDeleteCandidateTool,
+  registerBulkCreateContactTool,
+  registerBulkUpdateContactTool,
+  registerBulkDeleteContactTool,
+  registerBulkCreateResourceTool,
+  registerBulkUpdateResourceTool,
+  registerBulkDeleteResourceTool,
 } from './hr/index.js';
 export {
   registerCompanyTools,
   registerQuotationTools,
   registerOpportunityTools,
+  registerBulkCreateCompanyTool,
+  registerBulkUpdateCompanyTool,
+  registerBulkDeleteCompanyTool,
 } from './crm/index.js';
 export {
   registerInvoiceTools,
