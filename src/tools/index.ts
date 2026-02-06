@@ -4,6 +4,8 @@ export {
   registerResourceTools,
   registerContactTools,
   registerBulkCreateCandidateTool,
+  registerBulkUpdateCandidateTool,
+  registerBulkDeleteCandidateTool,
 } from './hr/index.js';
 export {
   registerCompanyTools,
