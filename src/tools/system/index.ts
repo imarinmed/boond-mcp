@@ -2,3 +2,4 @@ export { registerAppTools } from './apps.js';
 export { registerSettingTools } from './settings.js';
 export { registerAlertTools } from './alerts.js';
 export { registerFullTextSearchTool } from './search.js';
+export { registerFacetedSearchTool } from './faceted-search.js';

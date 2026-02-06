@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const searchParamsSchema = z.object({
   query: z.string().optional(),
@@ -7,11 +7,11 @@ export const searchParamsSchema = z.object({
 });
 
 export const candidateIdSchema = z.object({
-  id: z.string().min(1, "Candidate ID is required"),
+  id: z.string().min(1, 'Candidate ID is required'),
 });
 
 export const timeReportIdSchema = z.object({
-  id: z.string().min(1, "Time report ID is required"),
+  id: z.string().min(1, 'Time report ID is required'),
 });
 
 export const createCandidateSchema = z.object({
@@ -27,13 +27,13 @@ export const createCandidateSchema = z.object({
 export const updateCandidateSchema = createCandidateSchema.partial();
 
 export const updateCandidateWithIdSchema = z.object({
-  id: z.string().min(1, "Candidate ID is required"),
+  id: z.string().min(1, 'Candidate ID is required'),
   ...updateCandidateSchema.shape,
 });
 
 export const createCompanySchema = z.object({
   name: z.string().min(1),
-  type: z.enum(["client", "supplier", "partner"]).optional(),
+  type: z.enum(['client', 'supplier', 'partner']).optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   country: z.string().optional(),
@@ -43,25 +43,23 @@ export const createCompanySchema = z.object({
 export const updateCompanySchema = createCompanySchema.partial();
 
 export const companyIdSchema = z.object({
-  id: z.string().min(1, "Company ID is required"),
+  id: z.string().min(1, 'Company ID is required'),
 });
 
 export const updateCompanyWithIdSchema = z.object({
-  id: z.string().min(1, "Company ID is required"),
+  id: z.string().min(1, 'Company ID is required'),
   ...updateCompanySchema.shape,
 });
 
 export const opportunityIdSchema = z.object({
-  id: z.string().min(1, "Opportunity ID is required"),
+  id: z.string().min(1, 'Opportunity ID is required'),
 });
 
 export const createOpportunitySchema = z.object({
   name: z.string().min(1),
   companyId: z.string().min(1),
   contactId: z.string().optional(),
-  status: z
-    .enum(["lead", "qualified", "proposal", "negotiation", "won", "lost"])
-    .optional(),
+  status: z.enum(['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost']).optional(),
   value: z.number().positive().optional(),
   probability: z.number().min(0).max(100).optional(),
   expectedCloseDate: z.string().datetime().optional(),
@@ -71,7 +69,7 @@ export const createOpportunitySchema = z.object({
 export const updateOpportunitySchema = createOpportunitySchema.partial();
 
 export const updateOpportunityWithIdSchema = z.object({
-  id: z.string().min(1, "Opportunity ID is required"),
+  id: z.string().min(1, 'Opportunity ID is required'),
   ...updateOpportunitySchema.shape,
 });
 
@@ -80,16 +78,14 @@ export const updateOpportunityWithIdSchema = z.object({
 // ============================================================================
 
 export const quotationIdSchema = z.object({
-  id: z.string().min(1, "Quotation ID is required"),
+  id: z.string().min(1, 'Quotation ID is required'),
 });
 
 export const createQuotationSchema = z.object({
   opportunityId: z.string().min(1),
   companyId: z.string().min(1),
   total: z.number().positive(),
-  status: z
-    .enum(["draft", "sent", "accepted", "rejected", "expired"])
-    .optional(),
+  status: z.enum(['draft', 'sent', 'accepted', 'rejected', 'expired']).optional(),
   sentAt: z.string().datetime().optional(),
   validUntil: z.string().datetime().optional(),
   description: z.string().optional(),
@@ -98,19 +94,17 @@ export const createQuotationSchema = z.object({
 export const updateQuotationSchema = createQuotationSchema.partial();
 
 export const updateQuotationWithIdSchema = z.object({
-  id: z.string().min(1, "Quotation ID is required"),
+  id: z.string().min(1, 'Quotation ID is required'),
   ...updateQuotationSchema.shape,
 });
 
 export const projectIdSchema = z.object({
-  id: z.string().min(1, "Project ID is required"),
+  id: z.string().min(1, 'Project ID is required'),
 });
 
 export const searchProjectsSchema = z.object({
   query: z.string().optional(),
-  status: z
-    .enum(["planning", "active", "on-hold", "completed", "cancelled"])
-    .optional(),
+  status: z.enum(['planning', 'active', 'on-hold', 'completed', 'cancelled']).optional(),
   companyId: z.string().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(20),
@@ -118,7 +112,7 @@ export const searchProjectsSchema = z.object({
 
 export const createProjectSchema = z.object({
   name: z.string().min(1),
-  status: z.enum(["planning", "active", "on-hold", "completed", "cancelled"]),
+  status: z.enum(['planning', 'active', 'on-hold', 'completed', 'cancelled']),
   companyId: z.string(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
@@ -132,7 +126,7 @@ export const searchTimeReportsSchema = z.object({
   resourceId: z.string().optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  status: z.enum(["draft", "submitted", "approved", "rejected"]).optional(),
+  status: z.enum(['draft', 'submitted', 'approved', 'rejected']).optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(20),
 });
@@ -142,39 +136,39 @@ export const createTimeReportSchema = z.object({
   date: z.string().datetime(),
   hours: z.number().positive().max(24),
   projectId: z.string(),
-  status: z.enum(["draft", "submitted", "approved", "rejected"]).optional(),
+  status: z.enum(['draft', 'submitted', 'approved', 'rejected']).optional(),
   description: z.string().optional(),
 });
 
 export const updateTimeReportSchema = createTimeReportSchema.partial();
 
 export const absenceIdSchema = z.object({
-  id: z.string().min(1, "Absence ID is required"),
+  id: z.string().min(1, 'Absence ID is required'),
 });
 
 export const searchAbsencesSchema = z.object({
   resourceId: z.string().optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  status: z.enum(["draft", "requested", "approved", "rejected"]).optional(),
-  type: z.enum(["vacation", "sick-leave", "unpaid-leave", "training", "other"]).optional(),
+  status: z.enum(['draft', 'requested', 'approved', 'rejected']).optional(),
+  type: z.enum(['vacation', 'sick-leave', 'unpaid-leave', 'training', 'other']).optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(20),
 });
 
 export const createAbsenceSchema = z.object({
   resourceId: z.string(),
-  type: z.enum(["vacation", "sick-leave", "unpaid-leave", "training", "other"]),
+  type: z.enum(['vacation', 'sick-leave', 'unpaid-leave', 'training', 'other']),
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),
-  status: z.enum(["draft", "requested", "approved", "rejected"]).optional(),
+  status: z.enum(['draft', 'requested', 'approved', 'rejected']).optional(),
   reason: z.string().optional(),
 });
 
 export const updateAbsenceSchema = createAbsenceSchema.partial();
 
 export const updateAbsenceWithIdSchema = z.object({
-  id: z.string().min(1, "Absence ID is required"),
+  id: z.string().min(1, 'Absence ID is required'),
   ...updateAbsenceSchema.shape,
 });
 
@@ -183,7 +177,7 @@ export const updateAbsenceWithIdSchema = z.object({
 // ============================================================================
 
 export const deliveryIdSchema = z.object({
-  id: z.string().min(1, "Delivery ID is required"),
+  id: z.string().min(1, 'Delivery ID is required'),
 });
 
 export const searchDeliveriesSchema = z.object({
@@ -193,9 +187,9 @@ export const searchDeliveriesSchema = z.object({
 });
 
 export const createDeliverySchema = z.object({
-  projectId: z.string().min(1, "Project ID is required"),
-  name: z.string().min(1, "Delivery name is required"),
-  status: z.enum(["pending", "in-progress", "completed", "blocked"]).optional(),
+  projectId: z.string().min(1, 'Project ID is required'),
+  name: z.string().min(1, 'Delivery name is required'),
+  status: z.enum(['pending', 'in-progress', 'completed', 'blocked']).optional(),
   description: z.string().optional(),
   dueDate: z.string().optional(),
 });
@@ -203,37 +197,37 @@ export const createDeliverySchema = z.object({
 export const updateDeliverySchema = createDeliverySchema.partial();
 
 export const updateDeliveryWithIdSchema = z.object({
-  id: z.string().min(1, "Delivery ID is required"),
+  id: z.string().min(1, 'Delivery ID is required'),
   ...updateDeliverySchema.shape,
 });
 
 export const actionIdSchema = z.object({
-  id: z.string().min(1, "Action ID is required"),
+  id: z.string().min(1, 'Action ID is required'),
 });
 
 export const searchActionsSchema = z.object({
   query: z.string().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(20),
-  status: z.enum(["open", "in-progress", "completed", "cancelled"]).optional(),
+  status: z.enum(['open', 'in-progress', 'completed', 'cancelled']).optional(),
   projectId: z.string().optional(),
-  priority: z.enum(["low", "medium", "high"]).optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
 });
 
 export const createActionSchema = z.object({
-  name: z.string().min(1, "Action name is required"),
+  name: z.string().min(1, 'Action name is required'),
   projectId: z.string().optional(),
-  status: z.enum(["open", "in-progress", "completed", "cancelled"]).optional(),
+  status: z.enum(['open', 'in-progress', 'completed', 'cancelled']).optional(),
   assignedTo: z.string().optional(),
   dueDate: z.string().optional(),
-  priority: z.enum(["low", "medium", "high"]).optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
   description: z.string().optional(),
 });
 
 export const updateActionSchema = createActionSchema.partial();
 
 export const updateActionWithIdSchema = z.object({
-  id: z.string().min(1, "Action ID is required"),
+  id: z.string().min(1, 'Action ID is required'),
   ...updateActionSchema.shape,
 });
 
@@ -244,7 +238,7 @@ export const updateActionWithIdSchema = z.object({
 export const createInvoiceSchema = z.object({
   companyId: z.string(),
   total: z.number().positive(),
-  status: z.enum(["draft", "issued", "paid", "overdue", "cancelled"]).optional(),
+  status: z.enum(['draft', 'issued', 'paid', 'overdue', 'cancelled']).optional(),
   issuedAt: z.string().datetime(),
   paidAt: z.string().datetime().optional(),
   dueDate: z.string().datetime().optional(),
@@ -254,18 +248,18 @@ export const createInvoiceSchema = z.object({
 export const updateInvoiceSchema = createInvoiceSchema.partial();
 
 export const invoiceIdSchema = z.object({
-  id: z.string().min(1, "Invoice ID is required"),
+  id: z.string().min(1, 'Invoice ID is required'),
 });
 
 export const updateInvoiceWithIdSchema = z.object({
-  id: z.string().min(1, "Invoice ID is required"),
+  id: z.string().min(1, 'Invoice ID is required'),
   ...updateInvoiceSchema.shape,
 });
 
 export const createPurchaseSchema = z.object({
   companyId: z.string(),
   total: z.number().positive(),
-  status: z.enum(["draft", "ordered", "received", "invoiced", "cancelled"]).optional(),
+  status: z.enum(['draft', 'ordered', 'received', 'invoiced', 'cancelled']).optional(),
   orderedAt: z.string().datetime(),
   receivedAt: z.string().datetime().optional(),
 });
@@ -273,11 +267,11 @@ export const createPurchaseSchema = z.object({
 export const updatePurchaseSchema = createPurchaseSchema.partial();
 
 export const purchaseIdSchema = z.object({
-  id: z.string().min(1, "Purchase ID is required"),
+  id: z.string().min(1, 'Purchase ID is required'),
 });
 
 export const updatePurchaseWithIdSchema = z.object({
-  id: z.string().min(1, "Purchase ID is required"),
+  id: z.string().min(1, 'Purchase ID is required'),
   ...updatePurchaseSchema.shape,
 });
 
@@ -285,28 +279,28 @@ export const createOrderSchema = z.object({
   companyId: z.string(),
   projectId: z.string().optional(),
   total: z.number().positive(),
-  status: z.enum(["pending", "confirmed", "shipped", "delivered", "cancelled"]).optional(),
+  status: z.enum(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']).optional(),
 });
 
 export const updateOrderSchema = createOrderSchema.partial();
 
 export const orderIdSchema = z.object({
-  id: z.string().min(1, "Order ID is required"),
+  id: z.string().min(1, 'Order ID is required'),
 });
 
 export const updateOrderWithIdSchema = z.object({
-  id: z.string().min(1, "Order ID is required"),
+  id: z.string().min(1, 'Order ID is required'),
   ...updateOrderSchema.shape,
 });
 
 export const bankingAccountIdSchema = z.object({
-  id: z.string().min(1, "Banking account ID is required"),
+  id: z.string().min(1, 'Banking account ID is required'),
 });
 
 export const createBankingTransactionSchema = z.object({
   accountId: z.string(),
   amount: z.number(),
-  type: z.enum(["debit", "credit"]),
+  type: z.enum(['debit', 'credit']),
   date: z.string().datetime(),
   description: z.string().min(1),
   reference: z.string().optional(),
@@ -317,12 +311,12 @@ export const createBankingTransactionSchema = z.object({
 // ============================================================================
 
 export const expenseReportIdSchema = z.object({
-  id: z.string().min(1, "Expense report ID is required"),
+  id: z.string().min(1, 'Expense report ID is required'),
 });
 
 export const searchExpenseReportsSchema = z.object({
   resourceId: z.string().optional(),
-  status: z.enum(["draft", "submitted", "approved", "rejected", "paid"]).optional(),
+  status: z.enum(['draft', 'submitted', 'approved', 'rejected', 'paid']).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   page: z.number().int().min(1).default(1),
@@ -331,7 +325,7 @@ export const searchExpenseReportsSchema = z.object({
 
 export const createExpenseReportSchema = z.object({
   resourceId: z.string(),
-  status: z.enum(["draft", "submitted", "approved", "rejected", "paid"]).optional(),
+  status: z.enum(['draft', 'submitted', 'approved', 'rejected', 'paid']).optional(),
   total: z.number().positive(),
   period: z.object({
     startDate: z.string().datetime(),
@@ -342,13 +336,13 @@ export const createExpenseReportSchema = z.object({
 export const updateExpenseReportSchema = createExpenseReportSchema.partial();
 
 export const updateExpenseReportWithIdSchema = z.object({
-  id: z.string().min(1, "Expense report ID is required"),
+  id: z.string().min(1, 'Expense report ID is required'),
   ...updateExpenseReportSchema.shape,
 });
 
 export const rejectExpenseReportSchema = z.object({
-  id: z.string().min(1, "Expense report ID is required"),
-  reason: z.string().min(1, "Rejection reason is required"),
+  id: z.string().min(1, 'Expense report ID is required'),
+  reason: z.string().min(1, 'Rejection reason is required'),
 });
 
 // ============================================================================
@@ -356,7 +350,7 @@ export const rejectExpenseReportSchema = z.object({
 // ============================================================================
 
 export const agencyIdSchema = z.object({
-  id: z.string().min(1, "Agency ID is required"),
+  id: z.string().min(1, 'Agency ID is required'),
 });
 
 export const createAgencySchema = z.object({
@@ -369,12 +363,12 @@ export const createAgencySchema = z.object({
 export const updateAgencySchema = createAgencySchema.partial();
 
 export const updateAgencyWithIdSchema = z.object({
-  id: z.string().min(1, "Agency ID is required"),
+  id: z.string().min(1, 'Agency ID is required'),
   ...updateAgencySchema.shape,
 });
 
 export const businessUnitIdSchema = z.object({
-  id: z.string().min(1, "Business Unit ID is required"),
+  id: z.string().min(1, 'Business Unit ID is required'),
 });
 
 export const createBusinessUnitSchema = z.object({
@@ -386,25 +380,25 @@ export const createBusinessUnitSchema = z.object({
 export const updateBusinessUnitSchema = createBusinessUnitSchema.partial();
 
 export const updateBusinessUnitWithIdSchema = z.object({
-  id: z.string().min(1, "Business Unit ID is required"),
+  id: z.string().min(1, 'Business Unit ID is required'),
   ...updateBusinessUnitSchema.shape,
 });
 
 export const accountIdSchema = z.object({
-  id: z.string().min(1, "Account ID is required"),
+  id: z.string().min(1, 'Account ID is required'),
 });
 
 export const createAccountSchema = z.object({
   username: z.string().min(1),
   email: z.string().email(),
-  role: z.enum(["admin", "manager", "user", "viewer"]),
-  status: z.enum(["active", "inactive", "suspended"]).optional(),
+  role: z.enum(['admin', 'manager', 'user', 'viewer']),
+  status: z.enum(['active', 'inactive', 'suspended']).optional(),
 });
 
 export const updateAccountSchema = createAccountSchema.partial();
 
 export const updateAccountWithIdSchema = z.object({
-  id: z.string().min(1, "Account ID is required"),
+  id: z.string().min(1, 'Account ID is required'),
   ...updateAccountSchema.shape,
 });
 
@@ -413,7 +407,7 @@ export const updateAccountWithIdSchema = z.object({
 // ============================================================================
 
 export const documentIdSchema = z.object({
-  id: z.string().min(1, "Document ID is required"),
+  id: z.string().min(1, 'Document ID is required'),
 });
 
 export const updateDocumentSchema = z.object({
@@ -422,7 +416,7 @@ export const updateDocumentSchema = z.object({
 });
 
 export const updateDocumentWithIdSchema = z.object({
-  id: z.string().min(1, "Document ID is required"),
+  id: z.string().min(1, 'Document ID is required'),
   ...updateDocumentSchema.shape,
 });
 
@@ -431,11 +425,11 @@ export const updateDocumentWithIdSchema = z.object({
 // ============================================================================
 
 export const appIdSchema = z.object({
-  id: z.string().min(1, "App ID is required"),
+  id: z.string().min(1, 'App ID is required'),
 });
 
 export const settingIdSchema = z.object({
-  id: z.string().min(1, "Setting ID is required"),
+  id: z.string().min(1, 'Setting ID is required'),
 });
 
 export const updateSettingSchema = z.object({
@@ -444,12 +438,12 @@ export const updateSettingSchema = z.object({
 });
 
 export const updateSettingWithIdSchema = z.object({
-  id: z.string().min(1, "Setting ID is required"),
+  id: z.string().min(1, 'Setting ID is required'),
   ...updateSettingSchema.shape,
 });
 
 export const alertIdSchema = z.object({
-  id: z.string().min(1, "Alert ID is required"),
+  id: z.string().min(1, 'Alert ID is required'),
 });
 
 export const updateAlertSchema = z.object({
@@ -457,7 +451,7 @@ export const updateAlertSchema = z.object({
 });
 
 export const updateAlertWithIdSchema = z.object({
-  id: z.string().min(1, "Alert ID is required"),
+  id: z.string().min(1, 'Alert ID is required'),
   ...updateAlertSchema.shape,
 });
 
@@ -466,6 +460,17 @@ export const updateAlertWithIdSchema = z.object({
 // ============================================================================
 
 export type SearchParams = z.infer<typeof searchParamsSchema>;
+
+export const facetedSearchSchema = z.object({
+  query: z.string().optional(),
+  filters: z.record(z.string(), z.union([z.string(), z.array(z.string())])).optional(),
+  sortBy: z.enum(['createdAt', 'updatedAt', 'name', 'relevance']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(100).default(20),
+});
+
+export type FacetedSearchParams = z.infer<typeof facetedSearchSchema>;
 export type CandidateId = z.infer<typeof candidateIdSchema>;
 export type CreateCandidate = z.infer<typeof createCandidateSchema>;
 export type UpdateCandidate = z.infer<typeof updateCandidateSchema>;
@@ -555,7 +560,7 @@ export type UpdateAlertWithId = z.infer<typeof updateAlertWithIdSchema>;
 // ============================================================================
 
 export const contactIdSchema = z.object({
-  id: z.string().min(1, "Contact ID is required"),
+  id: z.string().min(1, 'Contact ID is required'),
 });
 
 export const createContactSchema = z.object({
@@ -571,7 +576,7 @@ export const createContactSchema = z.object({
 export const updateContactSchema = createContactSchema.partial();
 
 export const updateContactWithIdSchema = z.object({
-  id: z.string().min(1, "Contact ID is required"),
+  id: z.string().min(1, 'Contact ID is required'),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   email: z.string().email().optional(),
@@ -591,7 +596,7 @@ export type UpdateContact = z.infer<typeof updateContactSchema>;
 // ============================================================================
 
 export const resourceIdSchema = z.object({
-  id: z.string().min(1, "Resource ID is required"),
+  id: z.string().min(1, 'Resource ID is required'),
 });
 
 export const createResourceSchema = z.object({
@@ -599,7 +604,7 @@ export const createResourceSchema = z.object({
   lastName: z.string().min(1),
   email: z.string().email(),
   phone: z.string().optional(),
-  status: z.enum(["active", "inactive", "archived"]).optional(),
+  status: z.enum(['active', 'inactive', 'archived']).optional(),
   department: z.string().optional(),
   skills: z.array(z.string()).optional(),
   hourlyRate: z.number().positive().optional(),
@@ -608,12 +613,12 @@ export const createResourceSchema = z.object({
 export const updateResourceSchema = createResourceSchema.partial();
 
 export const updateResourceWithIdSchema = z.object({
-  id: z.string().min(1, "Resource ID is required"),
+  id: z.string().min(1, 'Resource ID is required'),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
-  status: z.enum(["active", "inactive", "archived"]).optional(),
+  status: z.enum(['active', 'inactive', 'archived']).optional(),
   department: z.string().optional(),
   skills: z.array(z.string()).optional(),
   hourlyRate: z.number().positive().optional(),
@@ -629,27 +634,27 @@ export type UpdateResource = z.infer<typeof updateResourceSchema>;
 // ============================================================================
 
 export const contractIdSchema = z.object({
-  id: z.string().min(1, "Contract ID is required"),
+  id: z.string().min(1, 'Contract ID is required'),
 });
 
 export const createContractSchema = z.object({
-  resourceId: z.string().min(1, "Resource ID is required"),
-  startDate: z.string().min(1, "Start date is required"),
+  resourceId: z.string().min(1, 'Resource ID is required'),
+  startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().optional(),
-  type: z.enum(["full-time", "part-time", "freelance"]),
-  status: z.enum(["active", "inactive", "ended"]).optional(),
+  type: z.enum(['full-time', 'part-time', 'freelance']),
+  status: z.enum(['active', 'inactive', 'ended']).optional(),
   hourlyRate: z.number().optional(),
 });
 
 export const updateContractSchema = createContractSchema.partial();
 
 export const updateContractWithIdSchema = z.object({
-  id: z.string().min(1, "Contract ID is required"),
+  id: z.string().min(1, 'Contract ID is required'),
   resourceId: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  type: z.enum(["full-time", "part-time", "freelance"]).optional(),
-  status: z.enum(["active", "inactive", "ended"]).optional(),
+  type: z.enum(['full-time', 'part-time', 'freelance']).optional(),
+  status: z.enum(['active', 'inactive', 'ended']).optional(),
   hourlyRate: z.number().optional(),
 });
 
