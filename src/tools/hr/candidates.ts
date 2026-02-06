@@ -2,27 +2,27 @@
  * Candidate tools registration
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { BoondAPIClient } from "../../api/client.js";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { BoondAPIClient } from '../../api/client.js';
 import {
   searchParamsSchema,
   createCandidateSchema,
   candidateIdSchema,
   updateCandidateWithIdSchema,
-} from "../../types/schemas.js";
-import type { Candidate, SearchResponse } from "../../types/boond.js";
-import { handleSearchError, handleToolError } from "../../utils/error-handling.js";
-import { ValidationError } from "../../api/client.js";
+} from '../../types/schemas.js';
+import type { Candidate, SearchResponse } from '../../types/boond.js';
+import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { ValidationError } from '../../api/client.js';
 
 /**
  * Format candidate list for display
  */
 function formatCandidateList(result: SearchResponse<Candidate>): string {
   if (result.data.length === 0) {
-    return "No candidates found.";
+    return 'No candidates found.';
   }
 
-  const candidates = result.data.map((candidate) => {
+  const candidates = result.data.map(candidate => {
     const lines: string[] = [];
     lines.push(`👤 ${candidate.firstName} ${candidate.lastName} (ID: ${candidate.id})`);
     lines.push(`   Email: ${candidate.email}`);
@@ -31,12 +31,12 @@ function formatCandidateList(result: SearchResponse<Candidate>): string {
     if (candidate.address) lines.push(`   Address: ${candidate.address}`);
     if (candidate.city) lines.push(`   City: ${candidate.city}`);
     if (candidate.country) lines.push(`   Country: ${candidate.country}`);
-    return lines.join("\n");
+    return lines.join('\n');
   });
 
   const summary = `Found ${result.data.length} candidate(s) (Page ${result.pagination.page}/${Math.ceil(result.pagination.total / result.pagination.limit)} of ${result.pagination.total} total)`;
 
-  return `${summary}\n\n${candidates.join("\n\n")}`;
+  return `${summary}\n\n${candidates.join('\n\n')}`;
 }
 
 /**
@@ -55,33 +55,30 @@ function formatCandidate(candidate: Candidate): string {
   if (candidate.createdAt) lines.push(`Created: ${candidate.createdAt}`);
   if (candidate.updatedAt) lines.push(`Updated: ${candidate.updatedAt}`);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
-export function registerCandidateTools(
-  server: McpServer,
-  client: BoondAPIClient
-): void {
+export function registerCandidateTools(server: McpServer, client: BoondAPIClient): void {
   /**
    * boond_candidates_search - Search candidates
    */
   server.registerTool(
-    "boond_candidates_search",
+    'boond_candidates_search',
     {
-      description: "Search candidates by name, email, or other criteria",
+      description: 'Search candidates by name, email, or other criteria',
       inputSchema: searchParamsSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = searchParamsSchema.parse(params);
         const result = await client.searchCandidates(validated);
         const text = formatCandidateList(result);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleSearchError(error, "candidates");
+        return handleSearchError(error, 'candidates');
       }
     }
   );
@@ -90,22 +87,22 @@ export function registerCandidateTools(
    * boond_candidates_get - Get candidate by ID
    */
   server.registerTool(
-    "boond_candidates_get",
+    'boond_candidates_get',
     {
-      description: "Get a candidate by ID",
+      description: 'Get a candidate by ID',
       inputSchema: candidateIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = candidateIdSchema.parse(params);
         const candidate = await client.getCandidate(validated.id);
         const text = formatCandidate(candidate);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleToolError(error, "retrieving", "Candidate");
+        return handleToolError(error, 'retrieving', 'Candidate');
       }
     }
   );
@@ -114,12 +111,12 @@ export function registerCandidateTools(
    * boond_candidates_create - Create new candidate
    */
   server.registerTool(
-    "boond_candidates_create",
+    'boond_candidates_create',
     {
-      description: "Create a new candidate",
+      description: 'Create a new candidate',
       inputSchema: createCandidateSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = createCandidateSchema.parse(params);
         const candidate = await client.createCandidate(validated);
@@ -128,13 +125,13 @@ export function registerCandidateTools(
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `Candidate created successfully!\n\n${text}`,
             },
           ],
         };
       } catch (error) {
-        return handleToolError(error, "creating", "Candidate");
+        return handleToolError(error, 'creating', 'Candidate');
       }
     }
   );
@@ -143,18 +140,18 @@ export function registerCandidateTools(
    * boond_candidates_update - Update existing candidate
    */
   server.registerTool(
-    "boond_candidates_update",
+    'boond_candidates_update',
     {
-      description: "Update an existing candidate",
+      description: 'Update an existing candidate',
       inputSchema: updateCandidateWithIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = updateCandidateWithIdSchema.parse(params);
         const { id, ...updateData } = validated;
 
         if (!id) {
-          throw new ValidationError("Candidate ID is required");
+          throw new ValidationError('Candidate ID is required');
         }
 
         const candidate = await client.updateCandidate(id, updateData);
@@ -163,13 +160,40 @@ export function registerCandidateTools(
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `Candidate updated successfully!\n\n${text}`,
             },
           ],
         };
       } catch (error) {
-        return handleToolError(error, "updating", "Candidate");
+        return handleToolError(error, 'updating', 'Candidate');
+      }
+    }
+  );
+
+  /**
+   * boond_candidates_delete - Delete a candidate
+   */
+  server.registerTool(
+    'boond_candidates_delete',
+    {
+      description: 'Delete a candidate by ID',
+      inputSchema: candidateIdSchema.shape,
+    },
+    async params => {
+      try {
+        const validated = candidateIdSchema.parse(params);
+        await client.deleteCandidate(validated.id);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Candidate ${validated.id} deleted successfully.`,
+            },
+          ],
+        };
+      } catch (error) {
+        return handleToolError(error, 'deleting', 'Candidate');
       }
     }
   );
