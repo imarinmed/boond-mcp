@@ -13,6 +13,7 @@ import {
   registerContractTools,
   registerResourceTools,
   registerContactTools as registerHRContactTools,
+  registerBulkCreateCandidateTool,
   // CRM Domain
   registerCompanyTools,
   registerQuotationTools,
@@ -75,6 +76,7 @@ async function main(): Promise<void> {
     registerContractTools(server, apiClient);
     registerResourceTools(server, apiClient);
     registerHRContactTools(server, apiClient);
+    registerBulkCreateCandidateTool(server, apiClient);
 
     // CRM Domain
     registerCompanyTools(server, apiClient);

@@ -3,6 +3,7 @@ export {
   registerContractTools,
   registerResourceTools,
   registerContactTools,
+  registerBulkCreateCandidateTool,
 } from './hr/index.js';
 export {
   registerCompanyTools,
