@@ -1,6 +1,6 @@
 {
   "name": "boond-mcp",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "TypeScript MCP server for BoondManager API - 94+ tools across 8 business domains",
   "type": "module",
   "main": "./build/index.js",

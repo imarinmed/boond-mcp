@@ -4,16 +4,28 @@
  * Entry point for the Model Context Protocol server
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { BoondAPIClient } from "./api/client.js";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { BoondAPIClient } from './api/client.js';
 import {
   // HR Domain
   registerCandidateTools,
   registerContractTools,
   registerResourceTools,
   registerContactTools as registerHRContactTools,
+  registerBulkCreateCandidateTool,
+  registerBulkUpdateCandidateTool,
+  registerBulkDeleteCandidateTool,
+  registerBulkCreateContactTool,
+  registerBulkUpdateContactTool,
+  registerBulkDeleteContactTool,
+  registerBulkCreateResourceTool,
+  registerBulkUpdateResourceTool,
+  registerBulkDeleteResourceTool,
   // CRM Domain
+  registerBulkCreateCompanyTool,
+  registerBulkUpdateCompanyTool,
+  registerBulkDeleteCompanyTool,
   registerCompanyTools,
   registerQuotationTools,
   registerOpportunityTools,
@@ -40,7 +52,11 @@ import {
   registerAppTools,
   registerSettingTools,
   registerAlertTools,
-} from "./tools/index.js";
+  registerFullTextSearchTool,
+  registerFacetedSearchTool,
+  registerDateRangeSearchTool,
+  registerAdvancedSearchTool,
+} from './tools/index.js';
 
 /**
  * Main server initialization and startup
@@ -49,15 +65,15 @@ async function main(): Promise<void> {
   try {
     // Initialize server
     const server = new McpServer({
-      name: "boondmanager",
-      version: "0.1.0",
+      name: 'boondmanager',
+      version: '0.1.0',
     });
 
     // Get API token from environment
-    const apiToken = process.env["BOOND_API_TOKEN"];
+    const apiToken = process.env['BOOND_API_TOKEN'];
     if (!apiToken) {
       console.error(
-        "Error: BOOND_API_TOKEN environment variable is not set. Please set it before starting the server."
+        'Error: BOOND_API_TOKEN environment variable is not set. Please set it before starting the server.'
       );
       process.exit(1);
     }
@@ -71,8 +87,20 @@ async function main(): Promise<void> {
     registerContractTools(server, apiClient);
     registerResourceTools(server, apiClient);
     registerHRContactTools(server, apiClient);
+    registerBulkCreateCandidateTool(server, apiClient);
+    registerBulkUpdateCandidateTool(server, apiClient);
+    registerBulkDeleteCandidateTool(server, apiClient);
+    registerBulkCreateContactTool(server, apiClient);
+    registerBulkUpdateContactTool(server, apiClient);
+    registerBulkDeleteContactTool(server, apiClient);
+    registerBulkCreateResourceTool(server, apiClient);
+    registerBulkUpdateResourceTool(server, apiClient);
+    registerBulkDeleteResourceTool(server, apiClient);
 
     // CRM Domain
+    registerBulkCreateCompanyTool(server, apiClient);
+    registerBulkUpdateCompanyTool(server, apiClient);
+    registerBulkDeleteCompanyTool(server, apiClient);
     registerCompanyTools(server, apiClient);
     registerQuotationTools(server, apiClient);
     registerOpportunityTools(server, apiClient);
@@ -105,34 +133,37 @@ async function main(): Promise<void> {
     registerAppTools(server, apiClient);
     registerSettingTools(server, apiClient);
     registerAlertTools(server, apiClient);
+    registerFullTextSearchTool(server, apiClient);
+    registerFacetedSearchTool(server, apiClient);
+    registerDateRangeSearchTool(server, apiClient);
+    registerAdvancedSearchTool(server, apiClient);
 
     // Initialize transport and connect
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
     // Log startup message to stderr only
-    console.error("BoondManager MCP Server running on stdio");
+    console.error('BoondManager MCP Server running on stdio');
 
     // Handle graceful shutdown
-    process.on("SIGINT", () => {
-      console.error("Received SIGINT, shutting down gracefully...");
+    process.on('SIGINT', () => {
+      console.error('Received SIGINT, shutting down gracefully...');
       process.exit(0);
     });
 
-    process.on("SIGTERM", () => {
-      console.error("Received SIGTERM, shutting down gracefully...");
+    process.on('SIGTERM', () => {
+      console.error('Received SIGTERM, shutting down gracefully...');
       process.exit(0);
     });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`Fatal error: ${errorMessage}`);
     process.exit(1);
   }
 }
 
 // Run the server
-main().catch((error) => {
+main().catch(error => {
   const errorMessage = error instanceof Error ? error.message : String(error);
   console.error(`Uncaught error: ${errorMessage}`);
   process.exit(1);

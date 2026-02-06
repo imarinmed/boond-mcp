@@ -2,28 +2,28 @@
  * Quotation tools registration
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { BoondAPIClient } from "../../api/client.js";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { BoondAPIClient } from '../../api/client.js';
 
-import type { Quotation, SearchResponse } from "../../types/boond.js";
+import type { Quotation, SearchResponse } from '../../types/boond.js';
 import {
   searchParamsSchema,
   createQuotationSchema,
   quotationIdSchema,
   updateQuotationWithIdSchema,
-} from "../../types/schemas.js";
+} from '../../types/schemas.js';
 
-import { handleSearchError, handleToolError } from "../../utils/error-handling.js";
+import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 
 /**
  * Format quotation list for display
  */
 function formatQuotationList(result: SearchResponse<Quotation>): string {
   if (result.data.length === 0) {
-    return "No quotations found.";
+    return 'No quotations found.';
   }
 
-  const quotations = result.data.map((quotation) => {
+  const quotations = result.data.map(quotation => {
     const lines: string[] = [];
     lines.push(`📋 Quotation ID: ${quotation.id}`);
     lines.push(`   Opportunity: ${quotation.opportunityId}`);
@@ -33,12 +33,12 @@ function formatQuotationList(result: SearchResponse<Quotation>): string {
     if (quotation.sentAt) lines.push(`   Sent: ${quotation.sentAt}`);
     if (quotation.validUntil) lines.push(`   Valid Until: ${quotation.validUntil}`);
     if (quotation.description) lines.push(`   Description: ${quotation.description}`);
-    return lines.join("\n");
+    return lines.join('\n');
   });
 
   const summary = `Found ${result.data.length} quotation(s) (Page ${result.pagination.page}/${Math.ceil(result.pagination.total / result.pagination.limit)} of ${result.pagination.total} total)`;
 
-  return `${summary}\n\n${quotations.join("\n\n")}`;
+  return `${summary}\n\n${quotations.join('\n\n')}`;
 }
 
 /**
@@ -57,33 +57,30 @@ function formatQuotation(quotation: Quotation): string {
   if (quotation.createdAt) lines.push(`Created: ${quotation.createdAt}`);
   if (quotation.updatedAt) lines.push(`Updated: ${quotation.updatedAt}`);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
-export function registerQuotationTools(
-  server: McpServer,
-  client: BoondAPIClient
-): void {
+export function registerQuotationTools(server: McpServer, client: BoondAPIClient): void {
   /**
    * boond_quotations_search - Search quotations
    */
   server.registerTool(
-    "boond_quotations_search",
+    'boond_quotations_search',
     {
-      description: "Search quotations by criteria",
+      description: 'Search quotations by criteria',
       inputSchema: searchParamsSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = searchParamsSchema.parse(params);
         const result = await client.searchQuotations(validated);
         const text = formatQuotationList(result);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleSearchError(error, "quotations");
+        return handleSearchError(error, 'quotations');
       }
     }
   );
@@ -92,22 +89,22 @@ export function registerQuotationTools(
    * boond_quotations_get - Get quotation by ID
    */
   server.registerTool(
-    "boond_quotations_get",
+    'boond_quotations_get',
     {
-      description: "Get a quotation by ID",
+      description: 'Get a quotation by ID',
       inputSchema: quotationIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = quotationIdSchema.parse(params);
         const quotation = await client.getQuotation(validated.id);
         const text = formatQuotation(quotation);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleToolError(error, "retrieving", "Quotation");
+        return handleToolError(error, 'retrieving', 'Quotation');
       }
     }
   );
@@ -116,12 +113,12 @@ export function registerQuotationTools(
    * boond_quotations_create - Create new quotation
    */
   server.registerTool(
-    "boond_quotations_create",
+    'boond_quotations_create',
     {
-      description: "Create a new quotation",
+      description: 'Create a new quotation',
       inputSchema: createQuotationSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = createQuotationSchema.parse(params);
         const quotation = await client.createQuotation(validated);
@@ -130,13 +127,13 @@ export function registerQuotationTools(
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `Quotation created successfully!\n\n${text}`,
             },
           ],
         };
       } catch (error) {
-        return handleToolError(error, "creating", "Quotation");
+        return handleToolError(error, 'creating', 'Quotation');
       }
     }
   );
@@ -145,12 +142,12 @@ export function registerQuotationTools(
    * boond_quotations_update - Update existing quotation
    */
   server.registerTool(
-    "boond_quotations_update",
+    'boond_quotations_update',
     {
-      description: "Update an existing quotation",
+      description: 'Update an existing quotation',
       inputSchema: updateQuotationWithIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const { id, ...updateData } = updateQuotationWithIdSchema.parse(params);
         const quotation = await client.updateQuotation(id, updateData);
@@ -159,13 +156,13 @@ export function registerQuotationTools(
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `Quotation updated successfully!\n\n${text}`,
             },
           ],
         };
       } catch (error) {
-        return handleToolError(error, "updating", "Quotation");
+        return handleToolError(error, 'updating', 'Quotation');
       }
     }
   );
@@ -174,12 +171,12 @@ export function registerQuotationTools(
    * boond_quotations_send - Send quotation
    */
   server.registerTool(
-    "boond_quotations_send",
+    'boond_quotations_send',
     {
-      description: "Send a quotation",
+      description: 'Send a quotation',
       inputSchema: quotationIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = quotationIdSchema.parse(params);
         const quotation = await client.sendQuotation(validated.id);
@@ -188,13 +185,37 @@ export function registerQuotationTools(
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `Quotation sent successfully!\n\n${text}`,
             },
           ],
         };
       } catch (error) {
-        return handleToolError(error, "sending", "Quotation");
+        return handleToolError(error, 'sending', 'Quotation');
+      }
+    }
+  );
+
+  server.registerTool(
+    'boond_quotations_delete',
+    {
+      description: 'Delete a quotation by ID',
+      inputSchema: quotationIdSchema.shape,
+    },
+    async params => {
+      try {
+        const validated = quotationIdSchema.parse(params);
+        await client.deleteQuotation(validated.id);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Quotation ${validated.id} deleted successfully.`,
+            },
+          ],
+        };
+      } catch (error) {
+        return handleToolError(error, 'deleting', 'Quotation');
       }
     }
   );
