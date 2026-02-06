@@ -37,4 +37,5 @@ export {
   registerAlertTools,
   registerFullTextSearchTool,
   registerFacetedSearchTool,
+  registerDateRangeSearchTool,
 } from './system/index.js';

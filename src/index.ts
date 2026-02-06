@@ -42,6 +42,7 @@ import {
   registerAlertTools,
   registerFullTextSearchTool,
   registerFacetedSearchTool,
+  registerDateRangeSearchTool,
 } from './tools/index.js';
 
 /**
@@ -109,6 +110,7 @@ async function main(): Promise<void> {
     registerAlertTools(server, apiClient);
     registerFullTextSearchTool(server, apiClient);
     registerFacetedSearchTool(server, apiClient);
+    registerDateRangeSearchTool(server, apiClient);
 
     // Initialize transport and connect
     const transport = new StdioServerTransport();
