@@ -392,6 +392,13 @@ export class BoondAPIClient {
   }
 
   /**
+   * Delete company
+   */
+  async deleteCompany(id: string): Promise<void> {
+    await this.request<void>('DELETE', `/companies/${encodeURIComponent(id)}`);
+  }
+
+  /**
    * Search opportunities
    */
   async searchOpportunities(params: SearchParams): Promise<SearchResponse<Opportunity>> {
@@ -426,6 +433,13 @@ export class BoondAPIClient {
   }
 
   /**
+   * Delete opportunity
+   */
+  async deleteOpportunity(id: string): Promise<void> {
+    await this.request<void>('DELETE', `/opportunities/${encodeURIComponent(id)}`);
+  }
+
+  /**
    * Search quotations
    */
   async searchQuotations(params: SearchParams): Promise<SearchResponse<Quotation>> {
@@ -457,6 +471,13 @@ export class BoondAPIClient {
    */
   async updateQuotation(id: string, data: UpdateQuotation): Promise<Quotation> {
     return this.request<Quotation>('PUT', `/quotations/${encodeURIComponent(id)}`, data);
+  }
+
+  /**
+   * Delete quotation
+   */
+  async deleteQuotation(id: string): Promise<void> {
+    await this.request<void>('DELETE', `/quotations/${encodeURIComponent(id)}`);
   }
 
   /**
@@ -501,6 +522,13 @@ export class BoondAPIClient {
   }
 
   /**
+   * Delete contact
+   */
+  async deleteContact(id: string): Promise<void> {
+    await this.request<void>('DELETE', `/contacts/${encodeURIComponent(id)}`);
+  }
+
+  /**
    * Search resources
    */
   async searchResources(params: SearchParams): Promise<SearchResponse<Resource>> {
@@ -532,6 +560,13 @@ export class BoondAPIClient {
    */
   async updateResource(id: string, data: UpdateResource): Promise<Resource> {
     return this.request<Resource>('PUT', `/resources/${encodeURIComponent(id)}`, data);
+  }
+
+  /**
+   * Delete resource
+   */
+  async deleteResource(id: string): Promise<void> {
+    await this.request<void>('DELETE', `/resources/${encodeURIComponent(id)}`);
   }
 
   /**
@@ -569,6 +604,13 @@ export class BoondAPIClient {
   }
 
   /**
+   * Delete contract
+   */
+  async deleteContract(id: string): Promise<void> {
+    await this.request<void>('DELETE', `/contracts/${encodeURIComponent(id)}`);
+  }
+
+  /**
    * Search projects
    */
   async searchProjects(params: SearchProjects): Promise<SearchResponse<Project>> {
@@ -602,6 +644,13 @@ export class BoondAPIClient {
    */
   async updateProject(id: string, data: UpdateProject): Promise<Project> {
     return this.request<Project>('PUT', `/projects/${encodeURIComponent(id)}`, data);
+  }
+
+  /**
+   * Delete project
+   */
+  async deleteProject(id: string): Promise<void> {
+    await this.request<void>('DELETE', `/projects/${encodeURIComponent(id)}`);
   }
 
   /**
@@ -804,6 +853,13 @@ export class BoondAPIClient {
   }
 
   /**
+   * Delete invoice
+   */
+  async deleteInvoice(id: string): Promise<void> {
+    await this.request<void>('DELETE', `/invoices/${encodeURIComponent(id)}`);
+  }
+
+  /**
    * Search purchases
    */
   async searchPurchases(params: SearchParams): Promise<SearchResponse<Purchase>> {
@@ -835,6 +891,13 @@ export class BoondAPIClient {
    */
   async updatePurchase(id: string, data: UpdatePurchase): Promise<Purchase> {
     return this.request<Purchase>('PUT', `/purchases/${encodeURIComponent(id)}`, data);
+  }
+
+  /**
+   * Delete purchase
+   */
+  async deletePurchase(id: string): Promise<void> {
+    await this.request<void>('DELETE', `/purchases/${encodeURIComponent(id)}`);
   }
 
   /**
