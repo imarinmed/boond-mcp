@@ -10,6 +10,12 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 - **Claude Desktop Integration**: Easy setup with Claude for Desktop
 - **Error Handling**: Comprehensive error handling with helpful messages
 
+## Documentation
+
+- [SETUP.md](SETUP.md) - Detailed installation and configuration guide
+- [DISTRIBUTION.md](DISTRIBUTION.md) - Guide for distributing the server to teams
+- [AGENTS.md](AGENTS.md) - Development workflow and best practices
+
 ## Prerequisites
 
 - Node.js 18+ or [Bun](https://bun.sh)
@@ -20,7 +26,7 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/boond-mcp.git
+git clone https://github.com/imarinmed/boond-mcp.git
 cd boond-mcp
 
 # Install dependencies
@@ -74,6 +80,7 @@ Add the following to your Claude Desktop configuration file:
 Manage candidates, contacts, resources, and contracts.
 
 #### Candidates
+
 - **`boond_candidates_search`** - Search for candidates with optional filters
   - Parameters: `query`, `page`, `limit`, `status`
 - **`boond_candidates_get`** - Get a candidate by ID
@@ -84,6 +91,7 @@ Manage candidates, contacts, resources, and contracts.
   - Parameters: `id`, plus any fields to update
 
 #### Contacts
+
 - **`boond_contacts_search`** - Search for contacts
   - Parameters: `query`, `page`, `limit`, `companyId`
 - **`boond_contacts_get`** - Get a contact by ID
@@ -94,6 +102,7 @@ Manage candidates, contacts, resources, and contracts.
   - Parameters: `id`, plus any fields to update
 
 #### Resources
+
 - **`boond_resources_search`** - Search for resources
   - Parameters: `query`, `page`, `limit`, `status`
 - **`boond_resources_get`** - Get a resource by ID
@@ -104,6 +113,7 @@ Manage candidates, contacts, resources, and contracts.
   - Parameters: `id`, plus any fields to update
 
 #### Contracts
+
 - **`boond_contracts_search`** - Search for contracts
   - Parameters: `query`, `page`, `limit`, `status`
 - **`boond_contracts_get`** - Get a contract by ID
@@ -118,6 +128,7 @@ Manage candidates, contacts, resources, and contracts.
 Manage companies, opportunities, and quotations.
 
 #### Companies
+
 - **`boond_companies_search`** - Search for companies
   - Parameters: `query`, `page`, `limit`, `type`
 - **`boond_companies_get`** - Get a company by ID
@@ -128,6 +139,7 @@ Manage companies, opportunities, and quotations.
   - Parameters: `id`, plus any fields to update
 
 #### Opportunities
+
 - **`boond_opportunities_search`** - Search for opportunities
   - Parameters: `query`, `page`, `limit`, `status`, `companyId`
 - **`boond_opportunities_get`** - Get an opportunity by ID
@@ -138,6 +150,7 @@ Manage companies, opportunities, and quotations.
   - Parameters: `id`, plus any fields to update
 
 #### Quotations
+
 - **`boond_quotations_search`** - Search for quotations
   - Parameters: `query`, `page`, `limit`, `status`, `opportunityId`
 - **`boond_quotations_get`** - Get a quotation by ID
@@ -154,6 +167,7 @@ Manage companies, opportunities, and quotations.
 Manage invoices, purchases, orders, and banking.
 
 #### Invoices
+
 - **`boond_invoices_search`** - Search for invoices
   - Parameters: `query`, `page`, `limit`, `status`, `dateFrom`, `dateTo`
 - **`boond_invoices_get`** - Get an invoice by ID
@@ -164,6 +178,7 @@ Manage invoices, purchases, orders, and banking.
   - Parameters: `id`, plus any fields to update
 
 #### Purchases
+
 - **`boond_purchases_search`** - Search for purchases
   - Parameters: `query`, `page`, `limit`, `status`, `dateFrom`, `dateTo`
 - **`boond_purchases_get`** - Get a purchase by ID
@@ -174,6 +189,7 @@ Manage invoices, purchases, orders, and banking.
   - Parameters: `id`, plus any fields to update
 
 #### Orders
+
 - **`boond_orders_search`** - Search for orders
   - Parameters: `query`, `page`, `limit`, `status`, `dateFrom`, `dateTo`
 - **`boond_orders_get`** - Get an order by ID
@@ -184,6 +200,7 @@ Manage invoices, purchases, orders, and banking.
   - Parameters: `id`, plus any fields to update
 
 #### Banking
+
 - **`boond_banking_accounts_search`** - Search banking accounts
   - Parameters: `query`, `page`, `limit`
 - **`boond_banking_accounts_get`** - Get a banking account by ID
@@ -196,12 +213,14 @@ Manage invoices, purchases, orders, and banking.
 Manage projects, deliveries, and actions.
 
 #### Projects
+
 - **`boond_projects_search`** - Search for projects
   - Parameters: `query`, `page`, `limit`, `status`, `companyId`
 - **`boond_projects_get`** - Get a project by ID
   - Parameters: `id`
 
 #### Deliveries
+
 - **`boond_deliveries_search`** - Search for deliveries
   - Parameters: `query`, `page`, `limit`, `projectId`, `status`
 - **`boond_deliveries_get`** - Get a delivery by ID
@@ -214,6 +233,7 @@ Manage projects, deliveries, and actions.
   - Parameters: `id`, `email`, `message`
 
 #### Actions
+
 - **`boond_actions_search`** - Search for actions
   - Parameters: `query`, `page`, `limit`, `projectId`, `status`, `assignedTo`
 - **`boond_actions_get`** - Get an action by ID
@@ -230,6 +250,7 @@ Manage projects, deliveries, and actions.
 Manage time reports, absences, and expenses.
 
 #### Time Reports
+
 - **`boond_timereports_search`** - Search time reports
   - Parameters: `resourceId`, `startDate`, `endDate`, `status`, `page`, `limit`
 - **`boond_timereports_get`** - Get a time report by ID
@@ -238,6 +259,7 @@ Manage time reports, absences, and expenses.
   - Parameters: `resourceId`, `date`, `hours`, `projectId`, `description`
 
 #### Absences
+
 - **`boond_absences_search`** - Search for absences
   - Parameters: `resourceId`, `startDate`, `endDate`, `type`, `status`, `page`, `limit`
 - **`boond_absences_get`** - Get an absence by ID
@@ -248,6 +270,7 @@ Manage time reports, absences, and expenses.
   - Parameters: `id`, plus any fields to update
 
 #### Expenses
+
 - **`boond_expenses_search`** - Search for expense reports
   - Parameters: `resourceId`, `startDate`, `endDate`, `status`, `page`, `limit`
 - **`boond_expenses_get`** - Get an expense report by ID
@@ -266,6 +289,7 @@ Manage time reports, absences, and expenses.
 Manage agencies, business units, and accounts.
 
 #### Agencies
+
 - **`boond_agencies_search`** - Search for agencies
   - Parameters: `query`, `page`, `limit`
 - **`boond_agencies_get`** - Get an agency by ID
@@ -276,6 +300,7 @@ Manage agencies, business units, and accounts.
   - Parameters: `id`, plus any fields to update
 
 #### Business Units
+
 - **`boond_businessunits_search`** - Search for business units
   - Parameters: `query`, `page`, `limit`
 - **`boond_businessunits_get`** - Get a business unit by ID
@@ -286,6 +311,7 @@ Manage agencies, business units, and accounts.
   - Parameters: `id`, plus any fields to update
 
 #### Accounts
+
 - **`boond_accounts_search`** - Search for accounts
   - Parameters: `query`, `page`, `limit`
 - **`boond_accounts_get`** - Get an account by ID
@@ -313,6 +339,7 @@ Manage documents and files.
 Manage apps, settings, and alerts.
 
 #### Apps
+
 - **`boond_apps_search`** - Search for apps
   - Parameters: `query`, `page`, `limit`, `type`
 - **`boond_apps_get`** - Get an app by ID
@@ -323,6 +350,7 @@ Manage apps, settings, and alerts.
   - Parameters: `id`
 
 #### Settings
+
 - **`boond_settings_search`** - Search for settings
   - Parameters: `query`, `page`, `limit`, `category`
 - **`boond_settings_get`** - Get a setting by ID
@@ -331,6 +359,7 @@ Manage apps, settings, and alerts.
   - Parameters: `id`, `value`, `category`
 
 #### Alerts
+
 - **`boond_alerts_search`** - Search for alerts
   - Parameters: `query`, `page`, `limit`, `status`, `severity`
 - **`boond_alerts_get`** - Get an alert by ID
@@ -345,6 +374,7 @@ Manage apps, settings, and alerts.
 Once configured, you can ask Claude to:
 
 **HR Management:**
+
 ```
 "Find candidates with React experience in Paris"
 "Create a new contact for John Doe at Acme Corp"
@@ -353,6 +383,7 @@ Once configured, you can ask Claude to:
 ```
 
 **CRM Operations:**
+
 ```
 "Search for all client companies"
 "Create a new opportunity worth €50,000 for Company XYZ"
@@ -361,6 +392,7 @@ Once configured, you can ask Claude to:
 ```
 
 **Financial Management:**
+
 ```
 "Search for unpaid invoices from last month"
 "Create a new purchase order for €5,000"
@@ -369,6 +401,7 @@ Once configured, you can ask Claude to:
 ```
 
 **Project Management:**
+
 ```
 "Show me all active projects"
 "Create a new delivery milestone for Project ABC"
@@ -377,6 +410,7 @@ Once configured, you can ask Claude to:
 ```
 
 **Time & Expenses:**
+
 ```
 "Create a time report for resource 123 on project 456 for 8 hours today"
 "Search time reports for resource 123 from January 1st to January 31st"
@@ -385,6 +419,7 @@ Once configured, you can ask Claude to:
 ```
 
 **Administration:**
+
 ```
 "Search for all agencies"
 "Create a new business unit called 'Sales Team'"
@@ -393,6 +428,7 @@ Once configured, you can ask Claude to:
 ```
 
 **Document Management:**
+
 ```
 "Search for documents in folder 'Contracts'"
 "Get download URL for document ID 12345"
@@ -400,6 +436,7 @@ Once configured, you can ask Claude to:
 ```
 
 **System Configuration:**
+
 ```
 "Search for email notification settings"
 "Install the Gmail integration app"
@@ -539,6 +576,7 @@ Make sure you've set the `BOOND_API_TOKEN` environment variable either in your `
 ### Tool not found
 
 If you get "Tool not found" errors:
+
 - Verify the tool name is correct (check spelling)
 - Ensure the server has been rebuilt after adding new tools
 - Check that the tool is properly registered in `src/index.ts`
@@ -559,6 +597,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## Changelog
 
 ### v0.2.0 (2026-02-03)
+
 - Expanded from 12 to 94 tools
 - Added 8 domain-based tool organization
 - New domains: HR, CRM, Finance, Projects, Time, Admin, Documents, System
@@ -566,5 +605,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - Comprehensive documentation
 
 ### v0.1.0 (2026-01-15)
+
 - Initial release with 12 tools
 - Basic CRUD for candidates, companies, projects, time reports

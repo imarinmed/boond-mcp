@@ -46,12 +46,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/boond-mcp.git"
+    "url": "https://github.com/imarinmed/boond-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/boond-mcp/issues"
+    "url": "https://github.com/imarinmed/boond-mcp/issues"
   },
-  "homepage": "https://github.com/yourusername/boond-mcp#readme",
+  "homepage": "https://github.com/imarinmed/boond-mcp#readme",
   "engines": {
     "node": ">=18.0.0",
     "bun": ">=1.0.0"
