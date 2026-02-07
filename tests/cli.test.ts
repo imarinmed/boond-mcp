@@ -61,9 +61,9 @@ describe('CLI Framework', () => {
 
   describe('Subcommands', () => {
     test("should recognize 'init' subcommand", async () => {
-      const result = await runCLI(['init']);
+      const result = await runCLI(['init', '--help']);
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('init');
+      expect(result.stdout).toContain('Initialize boond-mcp configuration');
     });
 
     test("should recognize 'validate' subcommand", async () => {
@@ -83,5 +83,13 @@ describe('CLI Framework', () => {
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('doctor');
     });
+  });
+});
+
+describe('Init Command', () => {
+  test('should display help for init command', async () => {
+    const result = await runCLI(['init', '--help']);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('Initialize boond-mcp configuration');
   });
 });

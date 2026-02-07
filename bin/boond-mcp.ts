@@ -28,8 +28,9 @@ program
 program
   .command('init')
   .description('Initialize boond-mcp configuration')
-  .action(() => {
-    console.log('boond-mcp init - Coming soon in Task 4.3');
+  .action(async () => {
+    const { initCommand } = await import('../src/cli/init.js');
+    await initCommand();
   });
 
 program
