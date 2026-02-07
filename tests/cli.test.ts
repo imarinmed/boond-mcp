@@ -101,3 +101,11 @@ describe('Validate Command', () => {
     expect(result.stdout).toContain('Validate boond-mcp configuration');
   });
 });
+
+describe('Test Command', () => {
+  test('should recognize test command', async () => {
+    const result = await runCLI(['test', '--help']);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('Test API connection');
+  });
+});

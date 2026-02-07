@@ -44,8 +44,9 @@ program
 program
   .command('test')
   .description('Test API connection')
-  .action(() => {
-    console.log('boond-mcp test - Coming soon in Task 4.5');
+  .action(async () => {
+    const { testCommand } = await import('../src/cli/test.js');
+    await testCommand();
   });
 
 program
