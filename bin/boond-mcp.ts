@@ -1,0 +1,57 @@
+#!/usr/bin/env node
+
+/**
+ * BoondManager MCP Server - Developer CLI Tool
+ * Provides commands for configuration, validation, testing, and diagnostics
+ */
+
+import { Command } from 'commander';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Get package.json version
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
+
+// Create CLI program
+const program = new Command();
+
+program
+  .name('boond-mcp')
+  .description('BoondManager MCP Server - Developer CLI Tool')
+  .version(packageJson.version, '-v, --version', 'Display version number')
+  .helpOption('-h, --help', 'Display help information');
+
+// Placeholder subcommands (will be implemented in Tasks 4.3-4.6)
+program
+  .command('init')
+  .description('Initialize boond-mcp configuration')
+  .action(() => {
+    console.log('boond-mcp init - Coming soon in Task 4.3');
+  });
+
+program
+  .command('validate')
+  .description('Validate boond-mcp configuration')
+  .action(() => {
+    console.log('boond-mcp validate - Coming soon in Task 4.4');
+  });
+
+program
+  .command('test')
+  .description('Test API connection')
+  .action(() => {
+    console.log('boond-mcp test - Coming soon in Task 4.5');
+  });
+
+program
+  .command('doctor')
+  .description('Diagnose boond-mcp setup issues')
+  .action(() => {
+    console.log('boond-mcp doctor - Coming soon in Task 4.6');
+  });
+
+// Parse CLI arguments
+program.parse(process.argv);

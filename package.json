@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./build/index.js",
   "bin": {
-    "boond-mcp": "./build/index.js"
+    "boond-mcp": "./build/bin/boond-mcp.js",
+    "boond-mcp-server": "./build/index.js"
   },
   "files": [
     "build/",
@@ -16,7 +17,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && chmod 755 build/index.js",
+    "build": "tsc && chmod 755 build/index.js && chmod 755 build/bin/boond-mcp.js",
     "dev": "tsc --watch",
     "start": "node build/index.js",
     "dist": "bash scripts/dist.sh",
@@ -58,6 +59,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "commander": "^14.0.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {
