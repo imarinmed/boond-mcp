@@ -377,4 +377,215 @@ describe('LRUCache', () => {
       expect(stats.size).toBe(3);
     });
   });
+
+  describe('TTL Configuration', () => {
+    it('should respect TTL and expire entries', async () => {
+      const cache = new LRUCache<string, string>({ maxSize: 10, ttl: 100 });
+      cache.set('key1', 'value1');
+
+      expect(cache.get('key1')).toBe('value1');
+      expect(cache.getStats().hits).toBe(1);
+
+      // Wait for expiration
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      expect(cache.get('key1')).toBeUndefined();
+      expect(cache.getStats().misses).toBe(1);
+      expect(cache.getStats().expirations).toBeGreaterThan(0);
+
+      cache.destroy();
+    });
+
+    it('should not return expired entries', async () => {
+      const cache = new LRUCache<string, number>({ maxSize: 5, ttl: 50 });
+      cache.set('a', 1);
+      cache.set('b', 2);
+
+      await new Promise(resolve => setTimeout(resolve, 70));
+
+      expect(cache.get('a')).toBeUndefined();
+      expect(cache.get('b')).toBeUndefined();
+      expect(cache.getStats().expirations).toBe(2);
+
+      cache.destroy();
+    });
+
+    it('should return non-expired entries', () => {
+      const cache = new LRUCache<string, string>({ maxSize: 5, ttl: 10000 });
+      cache.set('key1', 'value1');
+
+      expect(cache.get('key1')).toBe('value1');
+      expect(cache.getStats().hits).toBe(1);
+      expect(cache.getStats().expirations).toBe(0);
+
+      cache.destroy();
+    });
+  });
+
+  describe('Eviction Callbacks', () => {
+    it('should call onEvict callback when evicting due to capacity', () => {
+      const evictions: Array<{ key: string; value: number; reason: string }> = [];
+      const cache = new LRUCache<string, number>({
+        maxSize: 2,
+        onEvict: (key, value, reason) => evictions.push({ key, value, reason }),
+      });
+
+      cache.set('a', 1);
+      cache.set('b', 2);
+      cache.set('c', 3); // Should evict 'a'
+
+      expect(evictions).toHaveLength(1);
+      expect(evictions[0]).toEqual({ key: 'a', value: 1, reason: 'capacity' });
+    });
+
+    it('should call onEvict callback when entry expires via TTL', async () => {
+      const evictions: Array<{ key: string; value: string; reason: string }> = [];
+      const cache = new LRUCache<string, string>({
+        maxSize: 5,
+        ttl: 50,
+        onEvict: (key, value, reason) => evictions.push({ key, value, reason }),
+      });
+
+      cache.set('expired', 'value');
+
+      await new Promise(resolve => setTimeout(resolve, 70));
+
+      // Trigger cleanup by attempting to get
+      cache.get('expired');
+
+      // Give cleanup interval time to run
+      await new Promise(resolve => setTimeout(resolve, 30));
+
+      const ttlEvictions = evictions.filter(e => e.reason === 'ttl');
+      expect(ttlEvictions.length).toBeGreaterThan(0);
+      expect(ttlEvictions[0].key).toBe('expired');
+      expect(ttlEvictions[0].value).toBe('value');
+
+      cache.destroy();
+    });
+
+    it('should call onEvict callback when manually deleting', () => {
+      const evictions: Array<{ key: string; value: number; reason: string }> = [];
+      const cache = new LRUCache<string, number>({
+        maxSize: 5,
+        onEvict: (key, value, reason) => evictions.push({ key, value, reason }),
+      });
+
+      cache.set('key', 123);
+      cache.delete('key');
+
+      expect(evictions).toHaveLength(1);
+      expect(evictions[0]).toEqual({ key: 'key', value: 123, reason: 'manual' });
+    });
+  });
+
+  describe('Cache Options', () => {
+    it('should accept options object with maxSize, ttl, and onEvict', () => {
+      const evictions: Array<unknown> = [];
+      const cache = new LRUCache<string, string>({
+        maxSize: 50,
+        ttl: 5000,
+        onEvict: (key, value, reason) => evictions.push({ key, value, reason }),
+      });
+
+      expect(cache.getMaxSize()).toBe(50);
+      cache.set('test', 'value');
+      expect(cache.get('test')).toBe('value');
+
+      cache.destroy();
+    });
+
+    it('should maintain backward compatibility with number constructor', () => {
+      const cache = new LRUCache<string, number>(100);
+
+      expect(cache.getMaxSize()).toBe(100);
+      cache.set('key', 42);
+      expect(cache.get('key')).toBe(42);
+    });
+  });
+
+  describe('Cleanup Interval', () => {
+    it('should periodically clean up expired entries', async () => {
+      const cache = new LRUCache<string, string>({ maxSize: 10, ttl: 60 });
+
+      cache.set('key1', 'value1');
+      cache.set('key2', 'value2');
+
+      expect(cache.getSize()).toBe(2);
+
+      // Wait for expiration + cleanup interval (ttl/2 = 30ms)
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(cache.getStats().expirations).toBeGreaterThan(0);
+
+      cache.destroy();
+    });
+
+    it('should stop cleanup interval on destroy', async () => {
+      const cache = new LRUCache<string, string>({ maxSize: 5, ttl: 50 });
+      cache.set('key', 'value');
+
+      const expirationsBefore = cache.getStats().expirations;
+      cache.destroy();
+
+      // Wait longer than cleanup interval
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Expirations should not increase after destroy
+      const expirationsAfter = cache.getStats().expirations;
+      expect(expirationsAfter).toBe(expirationsBefore);
+    });
+  });
+
+  describe('Mixed Operations with TTL and Capacity', () => {
+    it('should handle TTL and capacity evictions together', async () => {
+      const evictions: Array<{ key: string; reason: string }> = [];
+      const cache = new LRUCache<string, number>({
+        maxSize: 2,
+        ttl: 100,
+        onEvict: (key, value, reason) => evictions.push({ key, reason }),
+      });
+
+      cache.set('a', 1);
+      cache.set('b', 2);
+      cache.set('c', 3); // Capacity eviction of 'a'
+
+      expect(evictions).toHaveLength(1);
+      expect(evictions[0].reason).toBe('capacity');
+
+      await new Promise(resolve => setTimeout(resolve, 120));
+
+      // Entries should expire
+      expect(cache.get('b')).toBeUndefined();
+      expect(cache.get('c')).toBeUndefined();
+
+      cache.destroy();
+    });
+
+    it('should track all eviction reasons in stats', async () => {
+      const cache = new LRUCache<string, string>({
+        maxSize: 2,
+        ttl: 50,
+      });
+
+      cache.set('a', '1');
+      cache.set('b', '2');
+      cache.set('c', '3'); // Capacity eviction
+
+      expect(cache.getStats().evictions).toBe(1);
+
+      cache.delete('b'); // Manual deletion doesn't increment evictions counter
+
+      await new Promise(resolve => setTimeout(resolve, 70));
+
+      // TTL expiration
+      cache.get('c'); // Trigger check
+
+      await new Promise(resolve => setTimeout(resolve, 30));
+
+      expect(cache.getStats().expirations).toBeGreaterThan(0);
+
+      cache.destroy();
+    });
+  });
 });
