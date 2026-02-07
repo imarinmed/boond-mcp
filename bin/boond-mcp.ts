@@ -36,8 +36,9 @@ program
 program
   .command('validate')
   .description('Validate boond-mcp configuration')
-  .action(() => {
-    console.log('boond-mcp validate - Coming soon in Task 4.4');
+  .action(async () => {
+    const { validateCommand } = await import('../src/cli/validate.js');
+    validateCommand();
   });
 
 program
