@@ -1,19 +1,16 @@
 # BoondManager MCP Server - Production Docker Image
-# Uses Bun runtime for optimal performance
+# Multi-stage build for optimal image size and performance
 
-FROM oven/bun:1-alpine
+# Stage 1: Build
+FROM oven/bun:latest AS builder
 
-# Set working directory
-WORKDIR /app
-
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+WORKDIR /build
 
 # Copy package files
-COPY package.json bun.lockb* ./
+COPY package.json bun.lock* ./
 
-# Install dependencies with frozen lockfile for reproducibility
-RUN bun install --frozen-lockfile
+# Install dependencies
+RUN bun install
 
 # Copy source code
 COPY src ./src
@@ -22,22 +19,34 @@ COPY tsconfig.json ./
 # Build the project
 RUN bun run build
 
-# Remove source code to reduce image size (optional, keep for debugging)
-# RUN rm -rf src tsconfig.json
+# Stage 2: Production
+FROM oven/bun:latest
 
-# Create a non-root user for security
-RUN addgroup -S boond && adduser -S boond -G boond
-USER boond
+WORKDIR /app
 
-# Health check (optional - verifies the MCP server is responsive)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | bun build/index.js >/dev/null 2>&1 || exit 1
+# Create non-root user for security
+RUN id -u bun >/dev/null 2>&1 || (groupadd -r bun && useradd -r -g bun bun)
 
-# Set environment variable placeholder (user must provide actual token)
-ENV BOOND_API_TOKEN=""
+# Copy only built artifacts from builder
+COPY --from=builder --chown=bun:bun /build/build ./build
+COPY --from=builder --chown=bun:bun /build/package.json ./package.json
+COPY --from=builder --chown=bun:bun /build/node_modules ./node_modules
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
+# Copy documentation (README, SETUP, DISTRIBUTION files that exist)
+COPY README.md ./
+COPY SETUP.md ./
+COPY DISTRIBUTION.md ./
+
+# Switch to non-root user
+USER bun
+
+# Set environment for MCP server
+ENV NODE_ENV=production
+
+# Health check to verify the server can start
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
+  CMD bun build/index.js --version 2>&1 | grep -q "boond-mcp" || exit 1
 
 # Run the MCP server
-CMD ["bun", "build/index.js"]
+# MCP servers communicate via stdio, so we run the server directly
+CMD ["bun", "run", "build/index.js"]
