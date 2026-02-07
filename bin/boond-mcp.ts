@@ -51,9 +51,10 @@ program
 
 program
   .command('doctor')
-  .description('Diagnose boond-mcp setup issues')
-  .action(() => {
-    console.log('boond-mcp doctor - Coming soon in Task 4.6');
+  .description('Diagnose boond-mcp setup and configuration issues')
+  .action(async () => {
+    const { doctorCommand } = await import('../src/cli/doctor.js');
+    await doctorCommand();
   });
 
 // Parse CLI arguments

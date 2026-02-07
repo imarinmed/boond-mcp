@@ -81,7 +81,7 @@ describe('CLI Framework', () => {
     test("should recognize 'doctor' subcommand", async () => {
       const result = await runCLI(['doctor', '--help']);
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Diagnose boond-mcp setup issues');
+      expect(result.stdout).toContain('Diagnose boond-mcp setup and configuration issues');
     });
   });
 });
@@ -107,5 +107,13 @@ describe('Test Command', () => {
     const result = await runCLI(['test', '--help']);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Test API connection');
+  });
+});
+
+describe('Doctor Command', () => {
+  test('should recognize doctor command', async () => {
+    const result = await runCLI(['doctor', '--help']);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('Diagnose boond-mcp setup and configuration issues');
   });
 });
