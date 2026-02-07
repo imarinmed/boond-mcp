@@ -684,3 +684,18 @@ If you encounter issues not covered here:
    - Steps to reproduce
    - Expected vs actual behavior
    - Environment details (OS, Node/Bun version)
+
+## Repository Hygiene
+
+### AI-Generated Analysis & Reports
+
+This repository uses a clean root with no committed AI-generated analysis documents. All AI-generated analysis, refactoring summaries, and comprehensive reports belong in the `.sisyphus/notepads/` directory, which is git-ignored.
+
+**Policy:**
+
+- AI analysis artifacts (e.g., `COMPREHENSIVE_ANALYSIS.md`, `REFACTORING_SUMMARY.md`) are **never committed** to the repo root
+- All local analysis work goes to: `.sisyphus/notepads/{plan-name}/`
+- The `.sisyphus/` directory is fully git-ignored and ephemeral (destroyed/recreated across sessions)
+- Repository root remains clean and contains only essential project files
+
+**Rationale:** Keeps the repository lean, prevents merge conflicts on auto-generated documents, and maintains clear separation between versioned code and ephemeral AI working notes.

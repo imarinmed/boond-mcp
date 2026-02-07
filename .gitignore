@@ -19,3 +19,7 @@ yarn-error.log*
 *.pem
 *.crt
 .git
+
+# AI-generated analysis and report artifacts (use .sisyphus/notepads for local AI work)
+/*_ANALYSIS.md
+/*_SUMMARY.md

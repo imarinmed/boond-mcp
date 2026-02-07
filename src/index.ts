@@ -7,6 +7,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { BoondAPIClient } from './api/client.js';
+import { applyInputSanitizationToServer } from './utils/input-sanitization.js';
+import { applyRateLimitingToServer, createRateLimiterFromEnv } from './utils/rate-limiter.js';
 import {
   // HR Domain
   registerCandidateTools,
@@ -80,6 +82,18 @@ async function main(): Promise<void> {
 
     // Initialize API client
     const apiClient = new BoondAPIClient(apiToken);
+
+    // Apply API-level request rate limiting for tool calls
+    const rateLimiter = createRateLimiterFromEnv(process.env);
+    applyRateLimitingToServer(server, rateLimiter);
+    applyInputSanitizationToServer(server);
+
+    if (rateLimiter.getConfig().enabled) {
+      const config = rateLimiter.getConfig();
+      console.error(
+        `Rate limiting enabled: ${config.maxRequests} requests per ${config.windowMs}ms`
+      );
+    }
 
     // Register all tools
     // HR Domain
