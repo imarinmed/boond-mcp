@@ -1,6 +1,6 @@
 /**
  * Tool Registration Tests
- * Tests for all 95 tool registrations across 8 business domains
+ * Tests for all 121 tool registrations across 8 business domains
  * Validates input schemas, success paths, error handling, and edge cases
  */
 
@@ -127,7 +127,7 @@ describe("1. HR Domain - Tool Registrations", () => {
   });
 
   describe("Contacts Tools", () => {
-    it("should register 4 contact tools", () => {
+    it("should register 5 contact tools", () => {
       registerContactTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
@@ -135,7 +135,7 @@ describe("1. HR Domain - Tool Registrations", () => {
         call[0].includes("contacts")
       );
 
-      expect(contactTools.length).toBe(4);
+      expect(contactTools.length).toBe(5);
     });
 
     it("should register contact search, get, create, update", () => {
@@ -152,11 +152,11 @@ describe("1. HR Domain - Tool Registrations", () => {
   });
 
   describe("Resources Tools", () => {
-    it("should register 4 resource tools", () => {
+    it("should register 5 resource tools", () => {
       registerResourceTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
-      expect(calls.length).toBe(4);
+      expect(calls.length).toBe(5);
     });
 
     it("should have resource tools with proper names", () => {
@@ -173,11 +173,11 @@ describe("1. HR Domain - Tool Registrations", () => {
   });
 
   describe("Contracts Tools", () => {
-    it("should register 4 contract tools", () => {
+    it("should register 5 contract tools", () => {
       registerContractTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
-      expect(calls.length).toBe(4);
+      expect(calls.length).toBe(5);
     });
 
     it("should have contract tools with proper names", () => {
@@ -209,11 +209,11 @@ describe("2. CRM Domain - Tool Registrations", () => {
   });
 
   describe("Companies Tools", () => {
-    it("should register 4 company tools", () => {
+    it("should register 5 company tools", () => {
       registerCompanyTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
-      expect(calls.length).toBe(4);
+      expect(calls.length).toBe(5);
     });
 
     it("should have company tools: search, get, create, update", () => {
@@ -230,11 +230,11 @@ describe("2. CRM Domain - Tool Registrations", () => {
   });
 
   describe("Opportunities Tools", () => {
-    it("should register 4 opportunity tools", () => {
+    it("should register 5 opportunity tools", () => {
       registerOpportunityTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
-      expect(calls.length).toBe(4);
+      expect(calls.length).toBe(5);
     });
 
     it("should have opportunity tools: search, get, create, update", () => {
@@ -251,12 +251,12 @@ describe("2. CRM Domain - Tool Registrations", () => {
   });
 
   describe("Quotations Tools", () => {
-    it("should register 5 quotation tools", () => {
+    it("should register 6 quotation tools", () => {
       registerQuotationTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
-      expect(calls.length).toBe(5);
-    });
+      expect(calls.length).toBe(6);
+     });
 
     it("should have quotation tools including send", () => {
       registerQuotationTools(mockServer as any, mockClient);
@@ -273,13 +273,13 @@ describe("2. CRM Domain - Tool Registrations", () => {
    });
 
    describe("CRM Domain Total", () => {
-     it("should register 13 CRM tools total (companies: 4, opportunities: 4, quotations: 5)", () => {
+     it("should register 16 CRM tools total (companies: 5, opportunities: 5, quotations: 6)", () => {
        registerCompanyTools(mockServer as any, mockClient);
        registerOpportunityTools(mockServer as any, mockClient);
        registerQuotationTools(mockServer as any, mockClient);
 
        const totalCalls = mockServer.registerTool.mock.calls.length;
-       expect(totalCalls).toBe(13);
+       expect(totalCalls).toBe(16);
      });
    });
  });
@@ -299,11 +299,11 @@ describe("3. Finance Domain - Tool Registrations", () => {
   });
 
   describe("Invoices Tools", () => {
-    it("should register 4 invoice tools", () => {
+    it("should register 5 invoice tools", () => {
       registerInvoiceTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
-      expect(calls.length).toBe(4);
+      expect(calls.length).toBe(5);
     });
 
     it("should have invoice tools: search, get, create, update", () => {
@@ -320,11 +320,11 @@ describe("3. Finance Domain - Tool Registrations", () => {
   });
 
   describe("Purchases Tools", () => {
-    it("should register 4 purchase tools", () => {
+    it("should register 5 purchase tools", () => {
       registerPurchaseTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
-      expect(calls.length).toBe(4);
+      expect(calls.length).toBe(5);
     });
 
     it("should have purchase tools: search, get, create, update", () => {
@@ -382,14 +382,14 @@ describe("3. Finance Domain - Tool Registrations", () => {
    });
 
    describe("Finance Domain Total", () => {
-     it("should register 15 Finance tools total (invoices: 4, purchases: 4, orders: 4, banking: 3)", () => {
+     it("should register 17 Finance tools total (invoices: 4, purchases: 4, orders: 4, banking: 3)", () => {
        registerInvoiceTools(mockServer as any, mockClient);
        registerPurchaseTools(mockServer as any, mockClient);
        registerOrderTools(mockServer as any, mockClient);
        registerBankingTools(mockServer as any, mockClient);
 
        const totalCalls = mockServer.registerTool.mock.calls.length;
-       expect(totalCalls).toBe(15);
+       expect(totalCalls).toBe(17);
      });
    });
  });
@@ -409,11 +409,11 @@ describe("4. Projects Domain - Tool Registrations", () => {
   });
 
   describe("Projects Tools", () => {
-    it("should register 2 project tools", () => {
+    it("should register 3 project tools", () => {
       registerProjectTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
-      expect(calls.length).toBe(2);
+      expect(calls.length).toBe(3);
     });
 
     it("should have project tools: search and get", () => {
@@ -472,13 +472,13 @@ describe("4. Projects Domain - Tool Registrations", () => {
    });
 
    describe("Projects Domain Total", () => {
-     it("should register 12 Projects tools total (projects: 2, deliveries: 5, actions: 5)", () => {
+     it("should register 13 Projects tools total (projects: 3, deliveries: 5, actions: 5)", () => {
        registerProjectTools(mockServer as any, mockClient);
        registerDeliveryTools(mockServer as any, mockClient);
        registerActionTools(mockServer as any, mockClient);
 
        const totalCalls = mockServer.registerTool.mock.calls.length;
-       expect(totalCalls).toBe(12);
+       expect(totalCalls).toBe(13);
      });
    });
  });
@@ -775,7 +775,7 @@ describe("9. Total Tool Count Verification", () => {
     mockClient = new BoondAPIClient("test-token");
   });
 
-   it("should register total of 95 tools across all domains", () => {
+   it("should register total of 105 tools across all domains", () => {
      registerCandidateTools(mockServer as any, mockClient);
      registerContactTools(mockServer as any, mockClient);
      registerResourceTools(mockServer as any, mockClient);
@@ -802,7 +802,7 @@ describe("9. Total Tool Count Verification", () => {
      registerAlertTools(mockServer as any, mockClient);
 
      const totalCalls = mockServer.registerTool.mock.calls.length;
-     expect(totalCalls).toBe(95);
+     expect(totalCalls).toBe(105);
   });
 
   it("should verify all tools have descriptions", () => {
