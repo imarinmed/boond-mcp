@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔐 Scanning for secrets..."
+node scripts/detect-secrets.js
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Pre-commit check failed. Commit blocked."
+  echo "Run 'git show :FILE_PATH' to view staged content"
+  exit 1
+fi
+
+echo "✅ No secrets detected"
+echo ""
+
+npx lint-staged
