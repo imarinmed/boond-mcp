@@ -29,7 +29,7 @@ program
   .command('init')
   .description('Initialize boond-mcp configuration')
   .action(async () => {
-    const { initCommand } = await import('../src/cli/init.js');
+    const { initCommand } = await import('../cli/init.js');
     await initCommand();
   });
 
@@ -37,7 +37,7 @@ program
   .command('validate')
   .description('Validate boond-mcp configuration')
   .action(async () => {
-    const { validateCommand } = await import('../src/cli/validate.js');
+    const { validateCommand } = await import('../cli/validate.js');
     validateCommand();
   });
 
@@ -45,7 +45,7 @@ program
   .command('test')
   .description('Test API connection')
   .action(async () => {
-    const { testCommand } = await import('../src/cli/test.js');
+    const { testCommand } = await import('../cli/test.js');
     await testCommand();
   });
 
@@ -53,7 +53,7 @@ program
   .command('doctor')
   .description('Diagnose boond-mcp setup and configuration issues')
   .action(async () => {
-    const { doctorCommand } = await import('../src/cli/doctor.js');
+    const { doctorCommand } = await import('../cli/doctor.js');
     await doctorCommand();
   });
 
