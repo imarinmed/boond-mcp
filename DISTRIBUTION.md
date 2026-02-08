@@ -38,8 +38,8 @@ For users who want a "plug-and-play" experience without managing source code, th
 
 ### How to Distribute
 
-1. Publish the package to the NPM registry: `npm publish`
-2. Users install it globally or as a dependency: `npm install -g boond-mcp`
+1. Publish the package to the NPM registry: `npm publish` (Note: v1.0.0 will be available shortly)
+2. Users install it globally or as a dependency: `npm install -g @imarinmed/boond-mcp`
 
 ### Advantages
 
@@ -56,7 +56,15 @@ Docker distribution ensures that the server runs in an identical environment reg
 ### How to Distribute
 
 1. Build and push the Docker image to a registry (e.g., Docker Hub, GitHub Packages).
+   ```bash
+   docker build -t boond-mcp:1.0.0 .
+   docker tag boond-mcp:1.0.0 your-registry/boond-mcp:1.0.0
+   docker push your-registry/boond-mcp:1.0.0
+   ```
 2. Users pull and run the image.
+   ```bash
+   docker run -e BOOND_API_TOKEN=your_token your-registry/boond-mcp:1.0.0
+   ```
 
 ### Advantages
 

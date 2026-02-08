@@ -1,5 +1,62 @@
 # BoondManager MCP Server - Release Notes
 
+## v1.0.0 - Stable Production Release (February 8, 2026)
+
+### 🎯 Release Focus
+
+This is the first stable production release of the BoondManager MCP Server. It provides comprehensive coverage of the BoondManager API with 121 tools across 8 business domains, fully tested and ready for production environments.
+
+### ✨ What's New
+
+#### Full API Coverage
+
+- **121 tools** registered and verified.
+- 8 business domains: HR, CRM, Finance, Projects, Time, Admin, Documents, System.
+- Full CRUD (Create, Read, Update, Delete) support for major entities.
+
+#### Distribution Options
+
+- **Docker Support**: Official Docker image `boond-mcp:1.0.0` available.
+- **npm Package**: Ready for publication as `@imarinmed/boond-mcp`.
+- **Direct Installation**: Improved setup guide for manual installation.
+
+#### Security & Stability
+
+- **Security Audit**: Completed comprehensive security review (v1.0.0).
+- **API Stability**: Established API freeze and stability guarantees.
+- **LTS Support**: Committed to long-term support for v1.x branch.
+
+### 🔧 Technical Details
+
+**Dependencies:**
+
+- Updated to latest stable dependencies.
+- Verified compatibility with Node.js 18+ and Bun 1.0+.
+
+**Test Coverage:**
+
+- 189/189 tests passing (100%).
+- Comprehensive validation for all 121 tools.
+
+### 🚀 Upgrade Instructions
+
+```bash
+# Pull latest changes
+git pull origin main
+git checkout v1.0.0
+
+# Install dependencies
+bun install
+
+# Build
+bun run build
+
+# Verify installation
+bun test
+```
+
+---
+
 ## v0.9.0 - Stabilization & Polish (February 7, 2026)
 
 ### 🎯 Release Focus
@@ -58,8 +115,8 @@ This release focuses on stabilization and API freeze preparation for v1.0. All c
 
 **Tool Count:**
 
-- 105 tools across 8 business domains
-- 121 tool registrations (including internal)
+- 121 tools across 8 business domains
+- Fully verified tool registrations
 
 ### ⚠️ Breaking Changes
 

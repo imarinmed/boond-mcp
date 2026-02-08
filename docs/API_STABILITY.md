@@ -1,14 +1,14 @@
-# BoondManager MCP Server - API Stability
+# BoondManager MCP Server - API Stability (v1.0.0)
 
-This document outlines the API stability guarantees for the BoondManager MCP Server, starting from the v1.0 stable release. It defines what constitutes the stable API surface, our versioning policy, and how we handle changes and deprecations.
+This document outlines the API stability guarantees for the BoondManager MCP Server, starting from the v1.0.0 stable release. It defines what constitutes the stable API surface, our versioning policy, and how we handle changes and deprecations.
 
 ## 1. Introduction
 
-The BoondManager MCP Server is designed to provide a reliable and predictable interface for AI assistants to interact with BoondManager. As we move to v1.0, we are committing to API stability to ensure that integrations built on top of this server continue to function correctly as the project evolves.
+The BoondManager MCP Server is designed to provide a reliable and predictable interface for AI assistants to interact with BoondManager. As we move to v1.0.0, we are committing to API stability to ensure that integrations built on top of this server continue to function correctly as the project evolves.
 
-### v1.0 Stability Guarantees
+### v1.0.0 Stability Guarantees
 
-- **Backward Compatibility**: We guarantee that any integration working with v1.0 will continue to work with all subsequent 1.x releases.
+- **Backward Compatibility**: We guarantee that any integration working with v1.0.0 will continue to work with all subsequent 1.x releases.
 - **Predictability**: Tool names, parameter structures, and response formats will remain consistent.
 - **Reliability**: Error codes and validation rules will follow established patterns.
 
@@ -125,4 +125,4 @@ When a feature or tool needs to be replaced or removed, we follow a transparent 
 
 ---
 
-_Last Updated: February 7, 2026_
+_Last Updated: February 8, 2026_

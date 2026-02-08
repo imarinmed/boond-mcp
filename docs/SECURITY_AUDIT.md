@@ -1,8 +1,8 @@
-# Security Audit Report - v0.9.0
+# Security Audit Report - v1.0.0
 
-**Audit Date:** February 7, 2026  
+**Audit Date:** February 8, 2026  
 **Auditor:** AI-Assisted Security Review  
-**Scope:** BoondManager MCP Server v0.9.0
+**Scope:** BoondManager MCP Server v1.0.0
 
 ## Executive Summary
 
@@ -141,7 +141,7 @@ const validated = searchParamsSchema.parse(params);
 
 **Coverage:**
 
-- 105 tools across 8 domains
+- 121 tools across 8 domains
 - All tools use Zod validation before processing
 - Parameter types enforced by TypeScript + Zod
 

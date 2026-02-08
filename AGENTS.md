@@ -2,11 +2,12 @@
 
 ## Project Overview
 
-A TypeScript-based Model Context Protocol (MCP) server providing 94+ tools across 8 business domains for BoondManager API integration.
+A TypeScript-based Model Context Protocol (MCP) server providing 121 tools across 8 business domains for BoondManager API integration.
 
 ## Architecture
 
 ### Directory Structure
+
 ```
 src/
 ├── api/
@@ -138,6 +139,7 @@ Follow **Conventional Commits** specification:
 #### Scopes
 
 Use domain or component names:
+
 - `hr`, `crm`, `finance`, `projects`, `time`, `admin`, `documents`, `system`
 - `api`, `types`, `utils`, `schemas`
 
@@ -208,7 +210,7 @@ catch (error) {
 ```typescript
 // In types/schemas.ts
 export const updateCandidateWithIdSchema = z.object({
-  id: z.string().min(1, "Candidate ID is required"),
+  id: z.string().min(1, 'Candidate ID is required'),
   ...updateCandidateSchema.shape,
 });
 ```
@@ -218,7 +220,7 @@ export const updateCandidateWithIdSchema = z.object({
 ```typescript
 // BAD - Don't do this in tool files
 const updateCandidateWithIdSchema = z.object({
-  id: z.string().min(1, "Candidate ID is required"),
+  id: z.string().min(1, 'Candidate ID is required'),
   // ... inline definition
 });
 ```
@@ -229,17 +231,14 @@ const updateCandidateWithIdSchema = z.object({
 
 ```typescript
 // GOOD
-export function registerCandidateTools(
-  server: McpServer,
-  client: BoondAPIClient
-): void {
+export function registerCandidateTools(server: McpServer, client: BoondAPIClient): void {
   server.registerTool(
-    "boond_candidates_search",
+    'boond_candidates_search',
     {
-      description: "Search candidates",
+      description: 'Search candidates',
       inputSchema: searchParamsSchema.shape,
     },
-    async (params) => {
+    async params => {
       // implementation
     }
   );
@@ -284,24 +283,25 @@ const validated = updateCandidateSchema.parse(params);
 ### 5. Import Organization
 
 Organize imports in this order:
+
 1. External dependencies (zod, MCP SDK)
 2. Type imports from types/
 3. API client and error imports
 4. Utility imports
 
 ```typescript
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 
-import type { Candidate, SearchResponse } from "../../types/boond.js";
+import type { Candidate, SearchResponse } from '../../types/boond.js';
 import {
   searchParamsSchema,
   createCandidateSchema,
   candidateIdSchema,
-} from "../../types/schemas.js";
+} from '../../types/schemas.js';
 
-import { ValidationError } from "../../api/client.js";
-import { handleSearchError, handleToolError } from "../../utils/error-handling.js";
+import { ValidationError } from '../../api/client.js';
+import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 ```
 
 ### 6. Tool Registration Pattern
@@ -309,93 +309,94 @@ import { handleSearchError, handleToolError } from "../../utils/error-handling.j
 Follow this consistent pattern for all tools:
 
 ```typescript
-export function registerXTools(
-  server: McpServer,
-  client: BoondAPIClient
-): void {
+export function registerXTools(server: McpServer, client: BoondAPIClient): void {
   // Search tool
   server.registerTool(
-    "boond_x_search",
+    'boond_x_search',
     {
-      description: "Search X by criteria",
+      description: 'Search X by criteria',
       inputSchema: searchParamsSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = searchParamsSchema.parse(params);
         const result = await client.searchX(validated);
         return {
-          content: [{ type: "text", text: formatXList(result) }],
+          content: [{ type: 'text', text: formatXList(result) }],
         };
       } catch (error) {
-        return handleSearchError(error, "x");
+        return handleSearchError(error, 'x');
       }
     }
   );
 
   // Get by ID tool
   server.registerTool(
-    "boond_x_get",
+    'boond_x_get',
     {
-      description: "Get an X by ID",
+      description: 'Get an X by ID',
       inputSchema: xIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = xIdSchema.parse(params);
         const item = await client.getX(validated.id);
         return {
-          content: [{ type: "text", text: formatX(item) }],
+          content: [{ type: 'text', text: formatX(item) }],
         };
       } catch (error) {
-        return handleToolError(error, "retrieving", "X");
+        return handleToolError(error, 'retrieving', 'X');
       }
     }
   );
 
   // Create tool
   server.registerTool(
-    "boond_x_create",
+    'boond_x_create',
     {
-      description: "Create a new X",
+      description: 'Create a new X',
       inputSchema: createXSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = createXSchema.parse(params);
         const item = await client.createX(validated);
         return {
-          content: [{
-            type: "text",
-            text: `X created successfully!\n\n${formatX(item)}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `X created successfully!\n\n${formatX(item)}`,
+            },
+          ],
         };
       } catch (error) {
-        return handleToolError(error, "creating", "X");
+        return handleToolError(error, 'creating', 'X');
       }
     }
   );
 
   // Update tool
   server.registerTool(
-    "boond_x_update",
+    'boond_x_update',
     {
-      description: "Update an existing X",
+      description: 'Update an existing X',
       inputSchema: updateXWithIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = updateXWithIdSchema.parse(params);
         const { id, ...updateData } = validated;
         const item = await client.updateX(id, updateData);
         return {
-          content: [{
-            type: "text",
-            text: `X updated successfully!\n\n${formatX(item)}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `X updated successfully!\n\n${formatX(item)}`,
+            },
+          ],
         };
       } catch (error) {
-        return handleToolError(error, "updating", "X");
+        return handleToolError(error, 'updating', 'X');
       }
     }
   );
@@ -409,20 +410,20 @@ Keep formatter functions simple and consistent:
 ```typescript
 function formatXList(result: SearchResponse<X>): string {
   if (result.data.length === 0) {
-    return "No X found.";
+    return 'No X found.';
   }
 
-  const items = result.data.map((item) => {
+  const items = result.data.map(item => {
     const lines: string[] = [];
     lines.push(`📄 ${item.name} (ID: ${item.id})`);
     if (item.description) lines.push(`   Description: ${item.description}`);
     // ... more fields
-    return lines.join("\n");
+    return lines.join('\n');
   });
 
   const summary = `Found ${result.data.length} X(s) (Page ${result.pagination.page}/${Math.ceil(result.pagination.total / result.pagination.limit)} of ${result.pagination.total} total)`;
 
-  return `${summary}\n\n${items.join("\n\n")}`;
+  return `${summary}\n\n${items.join('\n\n')}`;
 }
 
 function formatX(item: X): string {
@@ -433,13 +434,14 @@ function formatX(item: X): string {
   if (item.createdAt) lines.push(`Created: ${item.createdAt}`);
   if (item.updatedAt) lines.push(`Updated: ${item.updatedAt}`);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 ```
 
 ### 8. Testing
 
 When adding tests (future work):
+
 - Test error handling paths
 - Mock the API client
 - Test formatter functions with edge cases
@@ -469,9 +471,11 @@ When refactoring a tool file:
 ## Environment Variables
 
 Required:
+
 - `BOOND_API_TOKEN` - API authentication token
 
 Optional:
+
 - `BOOND_API_URL` - Custom API base URL (default: https://ui.boondmanager.com/api/1.0)
 
 ## Build Commands
@@ -490,6 +494,7 @@ bun run dev
 ## API Client Configuration
 
 The API client supports:
+
 - Request timeout (30s default, configurable)
 - Environment-based base URL
 - Automatic error classification
@@ -498,6 +503,7 @@ The API client supports:
 ## Domain Organization
 
 Tools are organized by business domain:
+
 - **HR**: candidates, contacts, resources, contracts
 - **CRM**: companies, opportunities, quotations
 - **Finance**: invoices, purchases, orders, banking
@@ -514,6 +520,7 @@ Each domain should follow the same patterns and structure.
 ### Git Issues
 
 **"fatal: not a git repository" in worktree**
+
 ```bash
 # Navigate to the worktree directory
 cd /path/to/boond-mcp-worktrees/feature-name
@@ -527,6 +534,7 @@ git worktree add ../boond-mcp-worktrees/feature-name feature/name
 ```
 
 **Wrong Git user in commits**
+
 ```bash
 # Check current config
 git config --local user.name
@@ -541,6 +549,7 @@ git commit --amend --author="imarinmed <imarinmed@users.noreply.github.com>"
 ```
 
 **Merge conflicts in worktrees**
+
 ```bash
 # From the worktree directory
 git fetch origin
@@ -554,6 +563,7 @@ git rebase --continue
 ### Build Issues
 
 **TypeScript compilation errors**
+
 ```bash
 # Check for type errors
 bunx tsc --noEmit
@@ -565,6 +575,7 @@ bunx tsc --noEmit
 ```
 
 **ESLint errors**
+
 ```bash
 # Run linter to see errors
 bun run lint
@@ -578,6 +589,7 @@ const data: any = fetchData();
 ```
 
 **Prettier formatting issues**
+
 ```bash
 # Check formatting
 bun run format:check
@@ -589,6 +601,7 @@ bun run format
 ### MCP Server Issues
 
 **"BOOND_API_TOKEN not set" error**
+
 ```bash
 # Create .env file
 cp .env.example .env
@@ -601,6 +614,7 @@ export BOOND_API_TOKEN=your_token_here
 ```
 
 **Server crashes on startup**
+
 ```bash
 # Check for stdout output (should only use stderr)
 BOOND_API_TOKEN=test bun run build/index.js 2>/dev/null
@@ -611,6 +625,7 @@ BOOND_API_TOKEN=test bun run build/index.js 2>&1 | head -20
 ```
 
 **Tools not appearing in Claude Desktop**
+
 ```bash
 # 1. Verify build is successful
 bun run build
@@ -625,21 +640,25 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | bun run build/index.js 2
 ### API Issues
 
 **401 Authentication errors**
+
 - Verify `BOOND_API_TOKEN` is correct
 - Check token hasn't expired
 - Ensure token has required permissions
 
 **404 Not Found errors**
+
 - Verify resource ID exists
 - Check API endpoint URL
 - Ensure resource hasn't been deleted
 
 **422 Validation errors**
+
 - Check required fields are provided
 - Verify data types match schema
 - Review error message for specific field issues
 
 **Timeout errors**
+
 - Default timeout is 30 seconds
 - Check network connectivity
 - Consider increasing timeout for slow operations:
@@ -650,6 +669,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | bun run build/index.js 2
 ### Development Workflow
 
 **Pre-commit checks failing**
+
 ```bash
 # Run all validation steps
 bun run validate
@@ -662,6 +682,7 @@ bun run build
 ```
 
 **Worktree out of sync with main**
+
 ```bash
 # From worktree directory
 git fetch origin
