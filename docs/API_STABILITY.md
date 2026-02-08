@@ -117,6 +117,8 @@ When a feature or tool needs to be replaced or removed, we follow a transparent 
 
 ## 6. Version Support
 
+For detailed information on our support lifecycle, timelines, and runtime support, please refer to our [Long-Term Support (LTS) Policy](LTS_POLICY.md).
+
 ### v1.x LTS (Long Term Support)
 
 - **Security Fixes**: Guaranteed for 2 years after the v1.0.0 release.
