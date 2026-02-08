@@ -11,7 +11,22 @@ You'll also need a **BoondManager API token**. Obtain this from your BoondManage
 
 ## Installation Steps
 
-### 1. Clone or Download the Repository
+### Option A: npm (Recommended)
+
+```bash
+npm install -g @imarinmed/boond-mcp
+```
+
+### Option B: Docker
+
+```bash
+docker pull boond-mcp:1.0.0
+docker run -e BOOND_API_TOKEN=your_token boond-mcp:1.0.0
+```
+
+### Option C: Manual (from source)
+
+#### 1. Clone or Download the Repository
 
 ```bash
 git clone https://github.com/imarinmed/boond-mcp.git
@@ -166,7 +181,7 @@ Expected output should show JSON response with tool definitions.
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | BOOND_API_TOKEN=your_token_here bun build/index.js 2>&1 | jq '.result.tools | length'
 ```
 
-Should return the number of tools (should be 94+).
+Should return the number of tools (should be 121).
 
 ### Test 4: Restart Claude Desktop
 

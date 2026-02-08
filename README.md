@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 
 ## Features
 
-- **Comprehensive API Coverage**: 94 tools across 8 business domains
+- **Comprehensive API Coverage**: 121 tools across 8 business domains
 - **Full CRUD Operations**: Search, read, create, and update records
 - **Type-Safe**: Built with TypeScript and Zod validation
 - **Claude Desktop Integration**: Easy setup with Claude for Desktop
@@ -15,6 +15,8 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 - [SETUP.md](SETUP.md) - Detailed installation and configuration guide
 - [DISTRIBUTION.md](DISTRIBUTION.md) - Guide for distributing the server to teams
 - [AGENTS.md](AGENTS.md) - Development workflow and best practices
+- [docs/API_STABILITY.md](docs/API_STABILITY.md) - API stability and versioning guarantees
+- [docs/LTS_POLICY.md](docs/LTS_POLICY.md) - Long-Term Support (LTS) policy
 
 ## Prerequisites
 
@@ -23,6 +25,22 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 - Your BoondManager API token
 
 ## Installation
+
+### npm (Recommended)
+
+```bash
+# Install globally
+npm install -g @imarinmed/boond-mcp
+# Note: Package will be available on npm registry shortly.
+```
+
+### Docker
+
+```bash
+docker run --rm -e BOOND_API_TOKEN=your_token boond-mcp:1.0.0
+```
+
+### Manual (from source)
 
 ```bash
 # Clone the repository
@@ -73,7 +91,7 @@ Add the following to your Claude Desktop configuration file:
 
 **Note**: Make sure to use the absolute path to the built index.js file.
 
-## Available Tools (94 Total)
+## Available Tools (121 Total)
 
 ### HR Domain (16 tools)
 
@@ -595,6 +613,14 @@ MIT
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Changelog
+
+### v1.0.0 (2026-02-08)
+
+- **Stable Production Release**
+- Finalized 121 tools across 8 domains
+- Added Docker support and installation guides
+- Comprehensive security audit and stability guarantees
+- Improved CLI diagnostics with `boond-mcp doctor`
 
 ### v0.2.0 (2026-02-03)
 
