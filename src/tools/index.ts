@@ -53,3 +53,5 @@ export {
   registerAdvancedSearchTool,
 } from './system/index.js';
 export { registerWebhookTools } from './webhooks/index.js';
+export { registerWorkflowTools } from './workflow/index.js';
+export { registerTemplateTools } from './workflow/templates.js';
