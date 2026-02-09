@@ -71,8 +71,17 @@ export function authenticateRequest(
 
 /**
  * Get authentication context from MCP request context
- * This is a placeholder - actual implementation depends on MCP SDK capabilities
+ * Tools receive context via extra.requestContext in MCP SDK
  */
-export function getAuthContext(_context: unknown): { userId: string; role: string } | null {
+export function getAuthContext(context?: unknown): { userId: string; role: string } | null {
+  // Extract user info from the MCP request context if available
+  if (context && typeof context === 'object' && context !== null) {
+    const ctx = context as Record<string, unknown>;
+    const userId = ctx['userId'] as string | undefined;
+    const role = ctx['role'] as string | undefined;
+    if (userId && role) {
+      return { userId, role };
+    }
+  }
   return null;
 }
