@@ -1,0 +1,14 @@
+{
+  "tenants": [
+    {
+      "id": "tenant-001",
+      "name": "Acme Corporation",
+      "slug": "acme-corp",
+      "apiToken": "tn_ReplaceWithSecureRandomToken123456789012345678901234",
+      "settings": {},
+      "isActive": true,
+      "createdAt": "2024-01-15T10:00:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z"
+    }
+  ]
+}
