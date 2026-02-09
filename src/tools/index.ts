@@ -41,6 +41,7 @@ export {
   registerAgencyTools,
   registerAccountTools,
   registerBusinessUnitTools,
+  registerAdminTools,
 } from './admin/index.js';
 export { registerDocumentTools } from './documents/index.js';
 export {

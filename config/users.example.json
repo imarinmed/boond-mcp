@@ -1,0 +1,31 @@
+{
+  "users": [
+    {
+      "id": "user-001",
+      "name": "Alice (HR)",
+      "email": "alice@company.com",
+      "role": "hr",
+      "apiKeyHash": "replace_with_actual_hash",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "isActive": true
+    },
+    {
+      "id": "user-002",
+      "name": "Bob (Finance)",
+      "email": "bob@company.com",
+      "role": "finance",
+      "apiKeyHash": "replace_with_actual_hash",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "isActive": true
+    },
+    {
+      "id": "user-003",
+      "name": "Charlie (Admin)",
+      "email": "charlie@company.com",
+      "role": "admin",
+      "apiKeyHash": "replace_with_actual_hash",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "isActive": true
+    }
+  ]
+}
