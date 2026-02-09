@@ -52,3 +52,4 @@ export {
   registerDateRangeSearchTool,
   registerAdvancedSearchTool,
 } from './system/index.js';
+export { registerWebhookTools } from './webhooks/index.js';
