@@ -86,6 +86,16 @@ import type {
 } from '../types/schemas.js';
 
 /**
+ * Role-based API tokens configuration
+ * Maps each role to its corresponding Boond API token
+ */
+export type RoleTokens = {
+  hr: string;
+  finance: string;
+  admin: string;
+};
+
+/**
  * Base API error class
  */
 export class ApiError extends Error {
@@ -162,17 +172,64 @@ export class ServerError extends ApiError {
 export class BoondAPIClient {
   private baseUrl: string;
   private apiToken: string;
-
   private requestTimeout: number;
+  private roleTokens: Map<string, string> | undefined;
+
+  /**
+   * Constructor overload for single token mode
+   */
+  constructor(apiToken: string, baseUrl?: string, requestTimeout?: number);
+
+  /**
+   * Constructor overload for multi-role token mode
+   */
+  constructor(tokens: RoleTokens, baseUrl?: string, requestTimeout?: number);
 
   constructor(
-    apiToken: string,
+    tokenOrTokens: string | RoleTokens,
     baseUrl: string = process.env['BOOND_API_URL'] || 'https://ui.boondmanager.com/api/1.0',
     requestTimeout: number = 30000
   ) {
     this.baseUrl = baseUrl;
-    this.apiToken = apiToken;
     this.requestTimeout = requestTimeout;
+
+    if (typeof tokenOrTokens === 'string') {
+      // Single token mode
+      this.apiToken = tokenOrTokens;
+      this.roleTokens = undefined;
+    } else {
+      // Multi-role token mode
+      this.roleTokens = new Map([
+        ['hr', tokenOrTokens.hr],
+        ['finance', tokenOrTokens.finance],
+        ['admin', tokenOrTokens.admin],
+      ]);
+      // Default to admin token for backward compatibility
+      this.apiToken = tokenOrTokens.admin;
+    }
+  }
+
+  /**
+   * Get a client instance configured for a specific role
+   * @param role - The role to get client for ('hr', 'finance', or 'admin')
+   * @returns BoondAPIClient configured with the role's token
+   * @throws Error if role is not configured
+   */
+  getClientForRole(role: string): BoondAPIClient {
+    if (!this.roleTokens?.has(role)) {
+      throw new Error(`Role '${role}' not configured`);
+    }
+    const token = this.roleTokens.get(role)!;
+    return new BoondAPIClient(token, this.baseUrl, this.requestTimeout);
+  }
+
+  /**
+   * Check if a specific role is configured
+   * @param role - The role to check
+   * @returns true if the role exists in the token map
+   */
+  hasRole(role: string): boolean {
+    return this.roleTokens?.has(role) ?? false;
   }
 
   /**
