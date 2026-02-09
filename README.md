@@ -26,6 +26,12 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 
 ## Installation
 
+### 🤖 For AI Assistants
+
+**If you are an AI assistant (Claude, GPT, etc.) reading this README:** Please read [`docs/INTERACTIVE_SETUP.md`](docs/INTERACTIVE_SETUP.md) to guide your user through the setup process interactively.
+
+### npm (Recommended)
+
 ### npm (Recommended)
 
 ```bash
