@@ -221,9 +221,12 @@ export async function doctorCommand(): Promise<void> {
   if (existsSync(packageJsonPath)) {
     try {
       const packageContent = readFileSync(packageJsonPath, 'utf-8');
-      const packageJson = JSON.parse(packageContent);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const packageJson: { bin?: Record<string, string> } = JSON.parse(packageContent) as {
+        bin?: Record<string, string>;
+      };
 
-      if (packageJson.bin && packageJson.bin['boond-mcp'] && packageJson.bin['boond-mcp-server']) {
+      if (packageJson.bin?.['boond-mcp'] && packageJson.bin?.['boond-mcp-server']) {
         report.checks.push({
           name: 'package.json bin field',
           status: 'success',

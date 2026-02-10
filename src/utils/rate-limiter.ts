@@ -97,7 +97,7 @@ export class FixedWindowRateLimiter {
 
   public constructor(
     private readonly config: RateLimitConfig,
-    private readonly now: () => number = () => Date.now()
+    private readonly now: () => number = (): number => Date.now()
   ) {}
 
   public getConfig(): RateLimitConfig {
@@ -197,10 +197,7 @@ export function applyRateLimitingToServer(
   const originalRegisterTool = server.registerTool.bind(server);
 
   const patchedRegisterTool = ((name: string, config: unknown, callback: unknown) => {
-    const wrapped = wrapToolHandlerWithRateLimit(
-      callback as unknown as RateLimitedToolHandler,
-      limiter
-    );
+    const wrapped = wrapToolHandlerWithRateLimit(callback as RateLimitedToolHandler, limiter);
 
     return originalRegisterTool(name, config as never, wrapped as never);
   }) as McpServer['registerTool'];

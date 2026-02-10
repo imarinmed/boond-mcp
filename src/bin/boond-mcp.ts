@@ -13,7 +13,9 @@ import { fileURLToPath } from 'url';
 // Get package.json version
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const packageJson = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
+const packageJson: { version: string } = JSON.parse(
+  readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8')
+) as { version: string };
 
 // Create CLI program
 const program = new Command();

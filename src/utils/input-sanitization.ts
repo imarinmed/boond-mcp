@@ -22,6 +22,7 @@ type SanitizedToolHandler = (
 ) => Promise<CallToolResult> | CallToolResult;
 
 function sanitizeString(value: string): string {
+  // eslint-disable-next-line no-control-regex
   const withoutControls = value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '');
   const neutralizedInjectionTokens = withoutControls.replace(/--|\/\*|\*\/|;/g, token => {
     return INJECTION_TOKEN_MAP[token] ?? token;
@@ -37,7 +38,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
     return false;
   }
 
-  const prototype = Object.getPrototypeOf(value);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const prototype: object | null = Object.getPrototypeOf(value) as object | null;
   return prototype === Object.prototype || prototype === null;
 }
 
