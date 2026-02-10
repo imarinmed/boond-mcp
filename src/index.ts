@@ -175,14 +175,43 @@ async function main(): Promise<void> {
         });
       });
 
+      // Store transports by session ID for bidirectional communication
+      const transports = new Map<string, SSEServerTransport>();
+
       // MCP SSE endpoint
       app.get('/mcp', async (_req, res) => {
         const transport = new SSEServerTransport('/mcp', res);
+        const sessionId = transport['sessionId'];
+        transports.set(sessionId, transport);
+
+        res.on('close', () => {
+          transports.delete(sessionId);
+        });
+
         await server.connect(transport);
       });
 
-      app.post('/mcp', async (_req, res) => {
-        res.status(501).json({ error: 'POST not implemented for SSE' });
+      // Handle POST messages for bidirectional MCP
+      app.post('/mcp', async (req, res) => {
+        const sessionId = req.query['sessionId'] as string | undefined;
+
+        if (!sessionId) {
+          res.status(400).json({ error: 'Missing sessionId parameter' });
+          return;
+        }
+
+        const transport = transports.get(sessionId);
+        if (!transport) {
+          res.status(404).json({ error: 'Session not found' });
+          return;
+        }
+
+        try {
+          await transport.handlePostMessage(req, res, req.body);
+        } catch (error) {
+          console.error('Error handling POST message:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        }
       });
 
       // Start HTTP server
