@@ -32,8 +32,6 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 
 ### npm (Recommended)
 
-### npm (Recommended)
-
 ```bash
 # Install globally
 npm install -g @imarinmed/boond-mcp

@@ -15,10 +15,10 @@ yarn-error.log*
 *.swo
 *~
 .sisyphus/
+.opencode/
 *.key
 *.pem
 *.crt
-.git
 
 # AI-generated analysis and report artifacts (use .sisyphus/notepads for local AI work)
 /*_ANALYSIS.md
