@@ -6,6 +6,9 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import express from 'express';
+import cors from 'cors';
 import { BoondAPIClient } from './api/client.js';
 import { applyInputSanitizationToServer } from './utils/input-sanitization.js';
 import { applyRateLimitingToServer, createRateLimiterFromEnv } from './utils/rate-limiter.js';
@@ -152,23 +155,78 @@ async function main(): Promise<void> {
     registerDateRangeSearchTool(server, apiClient);
     registerAdvancedSearchTool(server, apiClient);
 
-    // Initialize transport and connect
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
+    // Choose transport based on TRANSPORT_TYPE environment variable
+    const transportType = process.env['TRANSPORT_TYPE'] || 'stdio';
 
-    // Log startup message to stderr only
-    console.error('BoondManager MCP Server running on stdio');
+    if (transportType === 'http') {
+      // HTTP/SSE Transport
+      const app = express();
+      const port = parseInt(process.env['PORT'] || '3000', 10);
 
-    // Handle graceful shutdown
-    process.on('SIGINT', () => {
-      console.error('Received SIGINT, shutting down gracefully...');
-      process.exit(0);
-    });
+      // Apply CORS middleware
+      app.use(cors());
+      app.use(express.json());
 
-    process.on('SIGTERM', () => {
-      console.error('Received SIGTERM, shutting down gracefully...');
-      process.exit(0);
-    });
+      // Health check endpoint
+      app.get('/health', (_req, res) => {
+        res.json({
+          status: 'ok',
+          timestamp: new Date().toISOString(),
+        });
+      });
+
+      // MCP SSE endpoint
+      app.get('/mcp', async (_req, res) => {
+        const transport = new SSEServerTransport('/mcp', res);
+        await server.connect(transport);
+      });
+
+      app.post('/mcp', async (_req, res) => {
+        res.status(501).json({ error: 'POST not implemented for SSE' });
+      });
+
+      // Start HTTP server
+      const httpServer = app.listen(port, () => {
+        console.error(`BoondManager MCP Server running on HTTP at http://localhost:${port}`);
+        console.error('SSE endpoint: GET http://localhost:' + port + '/mcp');
+        console.error('Health check: GET http://localhost:' + port + '/health');
+      });
+
+      // Handle graceful shutdown
+      process.on('SIGINT', () => {
+        console.error('Received SIGINT, shutting down gracefully...');
+        httpServer.close(() => {
+          console.error('HTTP server closed');
+          process.exit(0);
+        });
+      });
+
+      process.on('SIGTERM', () => {
+        console.error('Received SIGTERM, shutting down gracefully...');
+        httpServer.close(() => {
+          console.error('HTTP server closed');
+          process.exit(0);
+        });
+      });
+    } else {
+      // Stdio Transport (default)
+      const transport = new StdioServerTransport();
+      await server.connect(transport);
+
+      // Log startup message to stderr only
+      console.error('BoondManager MCP Server running on stdio');
+
+      // Handle graceful shutdown
+      process.on('SIGINT', () => {
+        console.error('Received SIGINT, shutting down gracefully...');
+        process.exit(0);
+      });
+
+      process.on('SIGTERM', () => {
+        console.error('Received SIGTERM, shutting down gracefully...');
+        process.exit(0);
+      });
+    }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`Fatal error: ${errorMessage}`);
