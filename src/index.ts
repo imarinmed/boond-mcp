@@ -78,7 +78,7 @@ async function main(): Promise<void> {
     const apiToken = process.env['BOOND_API_TOKEN'];
     const clientToken = process.env['BOOND_CLIENT_TOKEN'];
     const clientKey = process.env['BOOND_CLIENT_KEY'];
-    const userToken = process.env['BOOND_USER_TOKEN'];
+    const userToken = process.env['BOOND_USER_TOKEN'] || apiToken;
     const jwtModeEnv = process.env['BOOND_JWT_MODE'];
     const jwtMode = jwtModeEnv === 'god' ? 'god' : 'normal';
 
@@ -100,6 +100,12 @@ async function main(): Promise<void> {
         'Error: missing Boond API credentials. Set either BOOND_API_TOKEN (legacy) OR BOOND_CLIENT_TOKEN + BOOND_CLIENT_KEY + BOOND_USER_TOKEN (X-Jwt-Client).'
       );
       process.exit(1);
+    }
+
+    if (clientToken && clientKey && userToken) {
+      console.error('Boond auth mode: X-Jwt-Client-BoondManager');
+    } else {
+      console.error('Boond auth mode: X-Token-BoondManager');
     }
 
     // Apply API-level request rate limiting for tool calls
