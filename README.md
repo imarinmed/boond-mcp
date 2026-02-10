@@ -69,7 +69,16 @@ cp .env.example .env
 Create a `.env` file in the project root:
 
 ```env
+# Boond API authentication (choose one mode)
+# 1) Legacy token mode:
 BOOND_API_TOKEN=your_api_token_here
+
+# 2) X-Jwt-Client mode:
+# BOOND_CLIENT_TOKEN=your_client_token_here
+# BOOND_CLIENT_KEY=your_client_key_here
+# BOOND_USER_TOKEN=your_user_token_here
+# BOOND_JWT_MODE=normal
+
 MCP_API_KEY=<set_a_secure_client_key>
 ```
 

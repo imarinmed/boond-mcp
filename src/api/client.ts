@@ -10,6 +10,8 @@
  * - 500/502/503/504: Server Error - temporary server issue, try again later
  */
 
+import { createHmac } from 'crypto';
+
 import type {
   Candidate,
   Company,
@@ -84,6 +86,21 @@ import type {
   UpdateDocument,
   UpdateSetting,
 } from '../types/schemas.js';
+
+type BoondJwtMode = 'normal' | 'god';
+
+type BoondAuthConfig =
+  | {
+      type: 'x-token';
+      apiToken: string;
+    }
+  | {
+      type: 'x-jwt-client';
+      clientToken: string;
+      clientKey: string;
+      userToken: string;
+      mode?: BoondJwtMode;
+    };
 
 /**
  * Base API error class
@@ -161,18 +178,71 @@ export class ServerError extends ApiError {
  */
 export class BoondAPIClient {
   private baseUrl: string;
-  private apiToken: string;
-
+  private authConfig: BoondAuthConfig;
   private requestTimeout: number;
 
   constructor(
-    apiToken: string,
+    authOrToken: BoondAuthConfig | string,
     baseUrl: string = process.env['BOOND_API_URL'] || 'https://ui.boondmanager.com/api/1.0',
     requestTimeout: number = 30000
   ) {
     this.baseUrl = baseUrl;
-    this.apiToken = apiToken;
+    this.authConfig =
+      typeof authOrToken === 'string' ? { type: 'x-token', apiToken: authOrToken } : authOrToken;
     this.requestTimeout = requestTimeout;
+  }
+
+  private static base64UrlEncode(input: string): string {
+    return Buffer.from(input)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+
+  private generateJwtClientHeader(): string {
+    if (this.authConfig.type !== 'x-jwt-client') {
+      throw new AuthenticationError('Invalid authentication configuration');
+    }
+
+    const header = {
+      alg: 'HS256',
+      typ: 'JWT',
+    };
+
+    const payload = {
+      userToken: this.authConfig.userToken,
+      clientToken: this.authConfig.clientToken,
+      time: Math.floor(Date.now() / 1000),
+      mode: this.authConfig.mode || 'normal',
+    };
+
+    const encodedHeader = BoondAPIClient.base64UrlEncode(JSON.stringify(header));
+    const encodedPayload = BoondAPIClient.base64UrlEncode(JSON.stringify(payload));
+    const dataToSign = `${encodedHeader}.${encodedPayload}`;
+    const signature = createHmac('sha256', this.authConfig.clientKey)
+      .update(dataToSign)
+      .digest('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    return `${dataToSign}.${signature}`;
+  }
+
+  private buildAuthHeaders(): Record<string, string> {
+    if (this.authConfig.type === 'x-jwt-client') {
+      return {
+        'X-Jwt-Client-BoondManager': this.generateJwtClientHeader(),
+      };
+    }
+
+    return {
+      // Legacy compatibility
+      'X-Token': this.authConfig.apiToken,
+      // Official Boond header name
+      'X-Token-BoondManager': this.authConfig.apiToken,
+    };
   }
 
   /**
@@ -188,7 +258,7 @@ export class BoondAPIClient {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'X-Token': this.apiToken,
+      ...this.buildAuthHeaders(),
     };
 
     try {
@@ -238,7 +308,7 @@ export class BoondAPIClient {
 
           case 401:
             console.error('Authentication error');
-            throw new AuthenticationError('Invalid API token or authentication failed');
+            throw new AuthenticationError('Invalid API credentials or authentication failed');
 
           case 404:
             console.error(

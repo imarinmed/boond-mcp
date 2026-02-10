@@ -74,17 +74,33 @@ async function main(): Promise<void> {
       version: '0.1.0',
     });
 
-    // Get API token from environment
+    // Initialize API client auth from environment
     const apiToken = process.env['BOOND_API_TOKEN'];
-    if (!apiToken) {
+    const clientToken = process.env['BOOND_CLIENT_TOKEN'];
+    const clientKey = process.env['BOOND_CLIENT_KEY'];
+    const userToken = process.env['BOOND_USER_TOKEN'];
+    const jwtModeEnv = process.env['BOOND_JWT_MODE'];
+    const jwtMode = jwtModeEnv === 'god' ? 'god' : 'normal';
+
+    const apiClient =
+      clientToken && clientKey && userToken
+        ? new BoondAPIClient({
+            type: 'x-jwt-client',
+            clientToken,
+            clientKey,
+            userToken,
+            mode: jwtMode,
+          })
+        : apiToken
+          ? new BoondAPIClient(apiToken)
+          : null;
+
+    if (!apiClient) {
       console.error(
-        'Error: BOOND_API_TOKEN environment variable is not set. Please set it before starting the server.'
+        'Error: missing Boond API credentials. Set either BOOND_API_TOKEN (legacy) OR BOOND_CLIENT_TOKEN + BOOND_CLIENT_KEY + BOOND_USER_TOKEN (X-Jwt-Client).'
       );
       process.exit(1);
     }
-
-    // Initialize API client
-    const apiClient = new BoondAPIClient(apiToken);
 
     // Apply API-level request rate limiting for tool calls
     const rateLimiter = createRateLimiterFromEnv(process.env);
