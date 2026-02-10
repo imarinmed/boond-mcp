@@ -159,6 +159,14 @@ async function main(): Promise<void> {
     const transportType = process.env['TRANSPORT_TYPE'] || 'stdio';
 
     if (transportType === 'http') {
+      const mcpApiKey = process.env['MCP_API_KEY'];
+      if (!mcpApiKey) {
+        console.error(
+          'Error: MCP_API_KEY environment variable is not set. HTTP transport requires client authentication.'
+        );
+        process.exit(1);
+      }
+
       // HTTP/SSE Transport
       const app = express();
       const port = parseInt(process.env['PORT'] || '3000', 10);
@@ -166,6 +174,22 @@ async function main(): Promise<void> {
       // Apply CORS middleware
       app.use(cors());
       app.use(express.json());
+
+      // Protect MCP endpoints with API key authentication
+      app.use((req, res, next) => {
+        if (req.path === '/health') {
+          next();
+          return;
+        }
+
+        const apiKey = req.header('x-api-key');
+        if (!apiKey || apiKey !== mcpApiKey) {
+          res.status(401).json({ error: 'Unauthorized' });
+          return;
+        }
+
+        next();
+      });
 
       // Health check endpoint
       app.get('/health', (_req, res) => {

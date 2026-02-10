@@ -70,6 +70,7 @@ Create a `.env` file in the project root:
 
 ```env
 BOOND_API_TOKEN=your_api_token_here
+MCP_API_KEY=<set_a_secure_client_key>
 ```
 
 ### Claude Desktop Setup
@@ -86,7 +87,8 @@ Add the following to your Claude Desktop configuration file:
       "command": "node",
       "args": ["/absolute/path/to/boond-mcp/build/index.js"],
       "env": {
-        "BOOND_API_TOKEN": "your_api_token_here"
+        "BOOND_API_TOKEN": "your_api_token_here",
+        "MCP_API_KEY": "your_mcp_client_api_key_here"
       }
     }
   }
