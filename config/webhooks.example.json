@@ -1,0 +1,15 @@
+{
+  "webhooks": [
+    {
+      "id": "wh_abc123xyz789",
+      "url": "https://example.com/webhook",
+      "events": [
+        "candidate.created",
+        "candidate.updated"
+      ],
+      "secret": "whsec_thisIsASecretKeyThatShouldBeRandomlyGeneratedAndKeptSecure12345678901234567890",
+      "isActive": true,
+      "createdAt": "2024-01-15T10:00:00.000Z"
+    }
+  ]
+}
