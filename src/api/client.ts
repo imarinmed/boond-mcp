@@ -364,6 +364,7 @@ export class BoondAPIClient {
       const rawData = (await response.json()) as unknown;
 
       // Transform JSON:API format (Boond /api/* responses) to internal SearchResponse format
+      // Transform JSON:API list format: { meta: { totals: { rows } }, data: [...] }
       if (
         rawData !== null &&
         typeof rawData === 'object' &&
@@ -388,6 +389,25 @@ export class BoondAPIClient {
           },
         };
         return transformed as T;
+      }
+
+      // Transform JSON:API single-item format: { meta: {...}, data: { id, attributes } }
+      if (
+        rawData !== null &&
+        typeof rawData === 'object' &&
+        'data' in rawData &&
+        !Array.isArray((rawData as Record<string, unknown>)['data']) &&
+        typeof (rawData as Record<string, unknown>)['data'] === 'object' &&
+        (rawData as Record<string, unknown>)['data'] !== null
+      ) {
+        const jsonApi = rawData as {
+          meta?: Record<string, unknown>;
+          data: { id: string; type?: string; attributes?: Record<string, unknown>; relationships?: unknown };
+        };
+        return {
+          id: jsonApi.data.id,
+          ...(jsonApi.data.attributes ?? {}),
+        } as T;
       }
 
       return rawData as T;
