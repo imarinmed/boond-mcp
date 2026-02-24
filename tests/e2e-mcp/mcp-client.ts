@@ -117,18 +117,15 @@ export async function callMCPTool(toolName: string, params: Record<string, any>)
   const url = `${MCP_SERVER_CONFIG.serverUrl}?sessionId=${currentSessionId}`;
   
   // Wait for response via SSE
-  const responsePromise = new Promise<any>((resolve) => {
+  const responsePromise = new Promise<any>((resolve, reject) => {
     pendingRequests.set(requestId, resolve);
-    
-    // Timeout after 10 seconds
     setTimeout(() => {
       if (pendingRequests.has(requestId)) {
         pendingRequests.delete(requestId);
-        resolve({ error: 'Request timeout' });
+        reject(new Error('Request timeout'));
       }
     }, 10000);
   });
-  
   // Send request via POST
   const response = await fetch(url, {
     method: 'POST',
@@ -146,13 +143,29 @@ export async function callMCPTool(toolName: string, params: Record<string, any>)
       },
     }),
   });
-
   if (!response.ok) {
     throw new Error(`MCP server error: ${response.status} ${response.statusText}`);
   }
 
   // Wait for response via SSE
-  return responsePromise;
+  const mcpResponse = await responsePromise;
+  
+  // Extract the result field from MCP response
+  if (mcpResponse.result) {
+    // Check if it's an error response
+    if (mcpResponse.result.isError) {
+      const errorText = mcpResponse.result.content?.[0]?.text || 'Unknown error';
+      throw new Error(errorText);
+    }
+    return mcpResponse.result;
+  }
+  
+  // If there's a top-level error
+  if (mcpResponse.error) {
+    throw new Error(mcpResponse.error.message || JSON.stringify(mcpResponse.error));
+  }
+  
+  return mcpResponse;
 }
 
 export async function listMCPTools(): Promise<Array<{ name: string; description: string }>> {
