@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { callMCPTool, listMCPTools } from './mcp-client.js';
+import { callMCPTool, listMCPTools, validateConfig } from './mcp-client.js';
 
 describe('MCP Server E2E Tests', () => {
   let availableTools: string[] = [];
+
+  beforeAll(async () => {
+    // Validate environment configuration
+    validateConfig();
+  });
 
   beforeAll(async () => {
     const tools = await listMCPTools();

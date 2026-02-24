@@ -1,8 +1,21 @@
+import { EventSource } from 'eventsource';
+
+
 export const MCP_SERVER_CONFIG = {
-  apiKey: '75621a070463f3ad2bd6e1dc38b7a36f5994c56f5ce885e08cf6f09e41a3141c',
+  apiKey: process.env.MCP_API_KEY || '',
   serverUrl: 'https://boond-mcp-d61y.onrender.com/mcp',
   timeout: 10000,
 };
+
+// Validate configuration before use
+export function validateConfig(): void {
+  if (!MCP_SERVER_CONFIG.apiKey) {
+    throw new Error(
+      'MCP_API_KEY environment variable is required. ' +
+      'Set it with: export MCP_API_KEY="your-api-key"'
+    );
+  }
+}
 
 let currentSessionId: string | null = null;
 let eventSource: EventSource | null = null;
@@ -46,9 +59,14 @@ function parseSseMessage(data: string): any | null {
 export async function establishSession(): Promise<string> {
   return new Promise((resolve, reject) => {
     const es = new EventSource(MCP_SERVER_CONFIG.serverUrl, {
-      headers: {
-        'X-API-Key': MCP_SERVER_CONFIG.apiKey,
-      },
+      fetch: (input, init) =>
+        fetch(input, {
+          ...init,
+          headers: {
+            ...init?.headers,
+            'X-API-Key': MCP_SERVER_CONFIG.apiKey,
+          },
+        }),
     });
 
     const timeout = setTimeout(() => {
@@ -56,26 +74,32 @@ export async function establishSession(): Promise<string> {
       reject(new Error('Session establishment timeout'));
     }, 10000);
 
-    es.onmessage = (event) => {
-      const sessionId = parseSessionIdFromSse(event.data);
+    // Listen for the specific 'endpoint' event type
+    es.addEventListener('endpoint', (event: any) => {
+      console.error('[SSE] Received endpoint event:', event.data);
+      // The event.data contains just the endpoint URL: /mcp?sessionId=xxx
+      const sessionMatch = event.data.match(/sessionId=([^&\s]+)/);
+      const sessionId = sessionMatch ? sessionMatch[1] : null;
       if (sessionId) {
         clearTimeout(timeout);
         currentSessionId = sessionId;
         eventSource = es;
-        
-        // Keep connection open for responses
         es.onmessage = (e) => {
-          const message = parseSseMessage(e.data);
-          if (message?.id && pendingRequests.has(message.id)) {
-            const resolver = pendingRequests.get(message.id)!;
-            resolver(message);
-            pendingRequests.delete(message.id);
+          console.error('[SSE] Received message:', e.data);
+          try {
+            const message = JSON.parse(e.data);
+            if (message?.id && pendingRequests.has(message.id)) {
+              const resolver = pendingRequests.get(message.id)!;
+              resolver(message);
+              pendingRequests.delete(message.id);
+            }
+          } catch (error) {
+            console.error('[SSE] Failed to parse message:', error);
           }
         };
-        
         resolve(sessionId);
       }
-    };
+    });
 
     es.onerror = () => {
       clearTimeout(timeout);

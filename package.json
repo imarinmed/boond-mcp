@@ -73,6 +73,7 @@
     "@typescript-eslint/parser": "^6.19.0",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^8.56.0",
+    "eventsource": "^4.1.0",
     "prettier": "^3.2.4",
     "typescript": "^5.3.3",
     "vitest": "^4.0.18"

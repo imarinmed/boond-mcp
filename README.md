@@ -106,6 +106,43 @@ Add the following to your Claude Desktop configuration file:
 
 **Note**: Make sure to use the absolute path to the built index.js file.
 
+### Opencode Setup
+
+For **Opencode** or other MCP clients that support HTTP/SSE connections to remote MCP servers:
+
+#### Environment Variables
+
+Add to your shell profile (`~/.zshrc`, `~/.bashrc`, or `~/.bash_profile`):
+
+```bash
+export BOOND_MCP_URL="https://your-mcp-server-url.com/mcp"
+export BOOND_MCP_API_KEY="<your-api-key>"
+```
+
+Then reload your profile:
+```bash
+source ~/.zshrc  # or ~/.bashrc
+```
+
+#### Configuration File
+
+Alternatively, create/edit `~/.opencode/config.json`:
+
+```json
+{
+  "mcpServers": {
+    "boondmanager": {
+      "url": "https://your-mcp-server-url.com/mcp",
+      "headers": {
+        "x-api-key": "your_mcp_api_key_here"
+      }
+    }
+  }
+}
+```
+
+**Note**: When using HTTP mode, the MCP server handles Boond API authentication internally. You only need the `x-api-key` header to authenticate with the MCP server itself.
+
 ## Available Tools (121 Total)
 
 ### HR Domain (16 tools)
