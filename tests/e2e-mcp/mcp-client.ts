@@ -182,7 +182,10 @@ export async function callMCPTool(toolName: string, params: Record<string, any>)
   
   // Extract the result field from MCP response
   if (mcpResponse.result) {
-    // Always return the result (including isError responses) — callers handle isError as needed
+    if (mcpResponse.result.isError) {
+      const errorText = mcpResponse.result.content?.[0]?.text || 'Unknown error';
+      throw new Error(errorText);
+    }
     return mcpResponse.result;
   }
   
