@@ -32,10 +32,9 @@ COPY --from=builder --chown=bun:bun /build/build ./build
 COPY --from=builder --chown=bun:bun /build/package.json ./package.json
 COPY --from=builder --chown=bun:bun /build/node_modules ./node_modules
 
-# Copy documentation (README, SETUP, DISTRIBUTION files that exist)
+# Copy documentation
 COPY README.md ./
-COPY SETUP.md ./
-COPY DISTRIBUTION.md ./
+COPY docs/ ./docs/
 
 # Switch to non-root user
 USER bun
