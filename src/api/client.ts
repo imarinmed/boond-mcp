@@ -233,7 +233,7 @@ export class BoondAPIClient {
   private buildAuthHeaders(): Record<string, string> {
     if (this.authConfig.type === 'x-jwt-client') {
       return {
-        'X-Jwt-Client-BoondManager': this.generateJwtClientHeader(),
+        'X-Jwt-Client-Boondmanager': this.generateJwtClientHeader(),
       };
     }
 
@@ -361,8 +361,36 @@ export class BoondAPIClient {
         );
       }
 
-      const data = (await response.json()) as T;
-      return data;
+      const rawData = (await response.json()) as unknown;
+
+      // Transform JSON:API format (Boond /api/* responses) to internal SearchResponse format
+      if (
+        rawData !== null &&
+        typeof rawData === 'object' &&
+        'meta' in rawData &&
+        'data' in rawData &&
+        Array.isArray((rawData as Record<string, unknown>)['data'])
+      ) {
+        const jsonApi = rawData as {
+          meta: { totals?: { rows?: number }; [key: string]: unknown };
+          data: Array<{ id: string; type?: string; attributes?: Record<string, unknown>; relationships?: unknown }>;
+        };
+        const rows = jsonApi.meta?.totals?.rows ?? jsonApi.data.length;
+        const transformed = {
+          data: jsonApi.data.map((item) => ({
+            id: item.id,
+            ...(item.attributes ?? {}),
+          })),
+          pagination: {
+            page: 1,
+            limit: jsonApi.data.length || 25,
+            total: rows,
+          },
+        };
+        return transformed as T;
+      }
+
+      return rawData as T;
     } catch (error) {
       // Re-throw API errors
       if (error instanceof ApiError) {

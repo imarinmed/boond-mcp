@@ -213,7 +213,7 @@ describe.skipIf(!process.env.MCP_API_KEY)('MCP Server E2E Tests', () => {
 
   describe('Time Domain', () => {
     it('should search time reports', async () => {
-      const result = await callMCPTool('boond_time_reports_search', {
+      const result = await callMCPTool('boond_timereports_search', {
         page: 1,
         limit: 5,
       });
@@ -233,7 +233,7 @@ describe.skipIf(!process.env.MCP_API_KEY)('MCP Server E2E Tests', () => {
     });
 
     it('should search expense reports', async () => {
-      const result = await callMCPTool('boond_expense_reports_search', {
+      const result = await callMCPTool('boond_expenses_search', {
         page: 1,
         limit: 5,
       });
@@ -255,7 +255,7 @@ describe.skipIf(!process.env.MCP_API_KEY)('MCP Server E2E Tests', () => {
     });
 
     it('should search business units', async () => {
-      const result = await callMCPTool('boond_business_units_search', {
+      const result = await callMCPTool('boond_businessunits_search', {
         page: 1,
         limit: 5,
       });
