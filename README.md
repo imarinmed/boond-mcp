@@ -12,9 +12,9 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 
 ## Documentation
 
-- [SETUP.md](SETUP.md) - Detailed installation and configuration guide
-- [DISTRIBUTION.md](DISTRIBUTION.md) - Guide for distributing the server to teams
-- [AGENTS.md](AGENTS.md) - Development workflow and best practices
+- [docs/SETUP.md](docs/SETUP.md) - Detailed installation and configuration guide
+- [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) - Guide for distributing the server to teams
+- [docs/AGENTS.md](docs/AGENTS.md) - Development workflow and best practices
 - [docs/API_STABILITY.md](docs/API_STABILITY.md) - API stability and versioning guarantees
 - [docs/LTS_POLICY.md](docs/LTS_POLICY.md) - Long-Term Support (LTS) policy
 
