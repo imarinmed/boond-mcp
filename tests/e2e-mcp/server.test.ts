@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { callMCPTool, listMCPTools, validateConfig, waitForServerReady } from './mcp-client.js';
 
-describe('MCP Server E2E Tests', () => {
+describe.skipIf(!process.env.MCP_API_KEY)('MCP Server E2E Tests', () => {
   let availableTools: string[] = [];
 
   beforeAll(async () => {

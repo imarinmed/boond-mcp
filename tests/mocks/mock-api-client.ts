@@ -372,6 +372,8 @@ export class MockBoondAPIClient {
   failureError: Error = new Error('Mock API Error');
   delay: number = 0;
   private entities: Map<string, Map<string, unknown>> = new Map();
+  private invoiceStates: Map<string, Partial<Invoice>> = new Map();
+  private expenseReportStates: Map<string, Partial<ExpenseReport>> = new Map();
 
   constructor() {
     const domains = [
@@ -874,7 +876,7 @@ export class MockBoondAPIClient {
     this.recordCall('getInvoice', [id]);
     await this.simulateDelay();
     this.maybeThrow();
-    return mockInvoice({ id });
+    return mockInvoice({ id, ...this.invoiceStates.get(id) });
   }
 
   async createInvoice(data: Partial<Invoice>): Promise<Invoice> {
@@ -901,7 +903,9 @@ export class MockBoondAPIClient {
     this.recordCall('payInvoice', [id]);
     await this.simulateDelay();
     this.maybeThrow();
-    return mockInvoice({ id, status: 'paid', paidAt: generateDate() });
+    const paidAt = generateDate();
+    this.invoiceStates.set(id, { status: 'paid', paidAt });
+    return mockInvoice({ id, status: 'paid', paidAt });
   }
 
   async searchPurchases(params: {
@@ -1125,7 +1129,7 @@ export class MockBoondAPIClient {
     this.recordCall('getExpenseReport', [id]);
     await this.simulateDelay();
     this.maybeThrow();
-    return mockExpenseReport({ id });
+    return mockExpenseReport({ id, ...this.expenseReportStates.get(id) });
   }
 
   async createExpenseReport(data: Partial<ExpenseReport>): Promise<ExpenseReport> {
@@ -1167,6 +1171,7 @@ export class MockBoondAPIClient {
     this.recordCall('payExpenseReport', [id]);
     await this.simulateDelay();
     this.maybeThrow();
+    this.expenseReportStates.set(id, { status: 'paid' });
     return mockExpenseReport({ id, status: 'paid' });
   }
 
