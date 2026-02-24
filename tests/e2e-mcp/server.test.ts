@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { callMCPTool, listMCPTools, validateConfig } from './mcp-client.js';
+import { callMCPTool, listMCPTools, validateConfig, waitForServerReady } from './mcp-client.js';
 
 describe('MCP Server E2E Tests', () => {
   let availableTools: string[] = [];
@@ -7,7 +7,11 @@ describe('MCP Server E2E Tests', () => {
   beforeAll(async () => {
     // Validate environment configuration
     validateConfig();
-  });
+    // Wait for Render server to be ready (handles cold starts)
+    console.log('🚀 Waiting for Render server to be ready...');
+    await waitForServerReady();
+    console.log('✅ Server is ready, starting tests...');
+  }, 120000); // 2 minute timeout for server warmup
 
   beforeAll(async () => {
     const tools = await listMCPTools();

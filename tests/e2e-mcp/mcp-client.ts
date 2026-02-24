@@ -17,6 +17,36 @@ export function validateConfig(): void {
   }
 }
 
+/**
+ * Wait for Render server to be ready (handles cold starts)
+ * Render free tier can take 30-60 seconds to wake up from sleep
+ */
+export async function waitForServerReady(maxRetries = 12, retryDelay = 5000): Promise<void> {
+  console.log('⏳ Checking if MCP server is ready...');
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // Try to establish a session as a health check
+      const sessionId = await establishSession();
+      if (sessionId) {
+        const waited = i * retryDelay / 1000;
+        console.log(`✅ MCP server ready after ${waited} seconds`);
+        return;
+      }
+    } catch (error) {
+      const attempt = i + 1;
+      const waited = attempt * retryDelay / 1000;
+      console.log(`⏳ Attempt ${attempt}/${maxRetries}: Server not ready yet (waited ${waited}s)...`);
+      
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+  }
+  
+  throw new Error(`Server not ready after ${maxRetries * retryDelay / 1000} seconds. Render free tier may be cold starting.`);
+}
+
 let currentSessionId: string | null = null;
 let eventSource: EventSource | null = null;
 const pendingRequests = new Map<string, (value: any) => void>();
@@ -71,8 +101,8 @@ export async function establishSession(): Promise<string> {
 
     const timeout = setTimeout(() => {
       es.close();
-      reject(new Error('Session establishment timeout'));
-    }, 10000);
+      reject(new Error('Session establishment timeout after 90 seconds. Server may still be cold starting.'));
+    }, 90000); // 90 seconds for Render free tier cold starts
 
     // Listen for the specific 'endpoint' event type
     es.addEventListener('endpoint', (event: any) => {
@@ -122,9 +152,9 @@ export async function callMCPTool(toolName: string, params: Record<string, any>)
     setTimeout(() => {
       if (pendingRequests.has(requestId)) {
         pendingRequests.delete(requestId);
-        reject(new Error('Request timeout'));
+        reject(new Error('Request timeout after 30 seconds'));
       }
-    }, 10000);
+    }, 30000); // 30 seconds for individual tool calls
   });
   // Send request via POST
   const response = await fetch(url, {
@@ -181,9 +211,9 @@ export async function listMCPTools(): Promise<Array<{ name: string; description:
     setTimeout(() => {
       if (pendingRequests.has(requestId)) {
         pendingRequests.delete(requestId);
-        resolve({ error: 'Request timeout' });
+        resolve({ error: 'Request timeout after 30 seconds' });
       }
-    }, 10000);
+    }, 30000); // 30 seconds for tool listing
   });
   
   const response = await fetch(url, {
