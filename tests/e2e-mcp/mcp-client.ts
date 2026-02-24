@@ -185,7 +185,6 @@ export async function callMCPTool(toolName: string, params: Record<string, any>)
     // Always return the result (including isError responses) — callers handle isError as needed
     return mcpResponse.result;
   }
-  }
   
   // If there's a top-level error
   if (mcpResponse.error) {
