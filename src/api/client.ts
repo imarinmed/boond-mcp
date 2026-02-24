@@ -183,7 +183,7 @@ export class BoondAPIClient {
 
   constructor(
     authOrToken: BoondAuthConfig | string,
-    baseUrl: string = process.env['BOOND_API_URL'] || 'https://ui.boondmanager.com/api/1.0',
+    baseUrl: string = process.env['BOOND_API_URL'] || 'https://ui.boondmanager.com/api',
     requestTimeout: number = 30000
   ) {
     this.baseUrl = baseUrl;

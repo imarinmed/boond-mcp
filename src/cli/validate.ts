@@ -68,7 +68,7 @@ export function validateCommand(): void {
       }
     } else {
       console.log(
-        'ℹ️  BOOND_API_URL not set (will use default: https://ui.boondmanager.com/api/1.0)'
+        'ℹ️  BOOND_API_URL not set (will use default: https://ui.boondmanager.com/api)'
       );
     }
   }

@@ -92,7 +92,7 @@ export async function doctorCommand(): Promise<void> {
     report.checks.push({
       name: 'BOOND_API_URL',
       status: 'info',
-      message: 'Using default (https://ui.boondmanager.com/api/1.0)',
+      message: 'Using default (https://ui.boondmanager.com/api)',
     });
   } else {
     try {
