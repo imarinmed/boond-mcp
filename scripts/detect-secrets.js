@@ -80,7 +80,9 @@ const IGNORE_PATTERNS = [
   /^node_modules\//,
   /^build\//,
   /^dist\//,
-  /\.env\.example$/,
+  /^\.env\.example$/,
+  /^docs\//,  // Documentation files may contain example tokens
+  /^scripts\/detect-secrets\.js$/,  // Detection script contains example patterns
   /SECURITY\.md$/,
   /test/i,
   /\.test\./,
