@@ -25,6 +25,68 @@ The MCP server itself is protected by an `x-api-key` header (configured in the u
 
 ---
 
+## Transport Protocols
+
+The Boond MCP server supports **three transport modes**. Use the appropriate one based on your MCP client's capabilities:
+
+### 1. Stdio (Default)
+- **Use when**: Running locally with Claude Desktop or similar
+- **How**: Command spawns the server, communicates via stdin/stdout
+- **Env**: `BOOND_API_TOKEN=xxx node build/index.js`
+
+### 2. HTTP with SSE (Stateful)
+- **Use when**: Remote server, real-time streaming needed
+- **Endpoints**:
+  - `GET /mcp` - Establish SSE connection (returns sessionId)
+  - `POST /mcp?sessionId=xxx` - Send JSON-RPC messages
+- **Headers**: `x-api-key: your_mcp_api_key`
+- **Note**: Requires maintaining persistent SSE connection
+
+### 3. HTTP Stateless (Simple) ⭐ RECOMMENDED for OpenCode
+- **Use when**: Simple HTTP requests without session management
+- **Endpoint**: `POST /mcp/http`
+- **Headers**: `Content-Type: application/json`, `x-api-key: your_mcp_api_key`
+- **Format**: Standard JSON-RPC 2.0
+
+**Example HTTP Stateless request:**
+```bash
+curl -X POST https://your-server.com/mcp/http \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: secret" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "boond_candidates_search",
+      "arguments": {"query": "Jean", "limit": 5}
+    }
+  }'
+```
+
+**Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [{"type": "text", "text": "..."}]
+  }
+}
+```
+
+### Which Transport to Use?
+
+| Transport | Session | Best For |
+|-----------|---------|----------|
+| **stdio** | N/A | Claude Desktop, local tools |
+| **SSE** | Required | Real-time streaming, persistent connections |
+| **HTTP Stateless** | None ✅ | OpenCode, simple scripts, testing |
+
+**For OpenCode remote MCP**: Use `/mcp/http` endpoint for simple request/response without session management.
+
+---
+
 ## Tool Catalog
 
 All tools follow the pattern `boond_{domain}_{action}`. Search tools accept `page` (default 1) and `limit` (default 25, max 100). Most also accept a `query` string for free-text search.

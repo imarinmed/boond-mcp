@@ -95,7 +95,11 @@ BOOND_API_TOKEN=your_api_token_here
 # BOOND_JWT_MODE=normal
 
 MCP_API_KEY=<set_a_secure_client_key>
-```
+MCP_API_KEY=<set_a_secure_client_key>
+
+# 3) Transport mode (optional - defaults to stdio)
+# TRANSPORT_TYPE=http  # Enable HTTP/SSE server mode
+# PORT=3000            # HTTP server port (default: 3000)
 
 ### 📛 Server Key: `boond-mcp`
 
@@ -168,6 +172,84 @@ Alternatively, create/edit `~/.opencode/config.json`:
 ```
 
 **Note**: When using HTTP mode, the MCP server handles Boond API authentication internally. You only need the `x-api-key` header to authenticate with the MCP server itself.
+
+## Transport Modes
+
+The BoondManager MCP server supports three transport modes:
+
+### 1. Stdio Mode (Default)
+
+**Best for**: Claude Desktop, local MCP clients
+
+```bash
+# No TRANSPORT_TYPE needed (defaults to stdio)
+BOOND_API_TOKEN=your_token node build/index.js
+```
+
+The server communicates via stdin/stdout - perfect for desktop applications.
+
+### 2. HTTP Mode with SSE (Stateful)
+
+**Best for**: Remote MCP servers, real-time updates
+
+```bash
+TRANSPORT_TYPE=http PORT=3000 MCP_API_KEY=secret node build/index.js
+```
+
+**Endpoints:**
+- `GET /mcp` - SSE connection endpoint (requires session management)
+- `POST /mcp?sessionId=xxx` - Send JSON-RPC messages
+- `GET /health` - Health check
+
+**Usage flow:**
+1. Establish SSE connection: `GET /mcp` → receive `sessionId`
+2. Send messages: `POST /mcp?sessionId=xxx` with JSON-RPC
+3. Receive responses through SSE stream
+
+**Note:** SSE requires maintaining a persistent connection. Sessions expire when the connection closes.
+
+### 3. HTTP Mode Stateless (New!)
+
+**Best for**: OpenCode, simple HTTP clients, testing
+
+```bash
+TRANSPORT_TYPE=http PORT=3000 MCP_API_KEY=secret node build/index.js
+```
+
+**Endpoint:**
+- `POST /mcp/http` - Stateless JSON-RPC endpoint
+
+**Example:**
+```bash
+curl -X POST http://localhost:3000/mcp/http \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: secret" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "boond_candidates_search",
+      "arguments": {"limit": 5}
+    }
+  }'
+```
+
+**Benefits:**
+- ✅ No session management required
+- ✅ Simple request/response pattern
+- ✅ Works with any HTTP client
+- ✅ Compatible with OpenCode remote MCP
+
+### Choosing a Transport
+
+| Transport | Session | Complexity | Best For |
+|-----------|---------|------------|----------|
+| **stdio** | N/A | Low | Claude Desktop, local tools |
+| **SSE** | Required | Medium | Real-time apps, long-lived connections |
+| **HTTP Stateless** | None | Low | Quick scripts, testing, OpenCode |
+
+## Available Tools (121 Total)
 
 ## Available Tools (121 Total)
 

@@ -31,7 +31,34 @@ Create or edit `opencode.json` (or `opencode.jsonc`) and add:
       "enabled": true
     }
   }
+```
+
+### Alternative: HTTP Stateless Endpoint (No SSE Required)
+
+The server also provides a **stateless HTTP endpoint** at `/mcp/http` that doesn't require session management. This is simpler for testing and scripts:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "boond-mcp": {
+      "type": "remote",
+      "url": "https://boond-mcp-d61y.onrender.com/mcp/http",
+      "oauth": false,
+      "headers": {
+        "x-api-key": "{env:BOOND_MCP_API_KEY}"
+      },
+      "enabled": true
+    }
+  }
 }
+```
+
+**Differences:**
+- **SSE endpoint** (`/mcp`): Requires persistent connection, supports real-time streaming
+- **HTTP endpoint** (`/mcp/http`): Simple request/response, no session management needed
+
+For OpenCode, both work, but the HTTP endpoint is simpler for basic usage.
 ```
 
 Why this format:
