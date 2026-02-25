@@ -13,6 +13,7 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 ## Documentation
 
 - [docs/SETUP.md](docs/SETUP.md) - Detailed installation and configuration guide
+- [docs/AI_SKILLS.md](docs/AI_SKILLS.md) - How to install Boond MCP skills for your AI assistant
 - [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) - Guide for distributing the server to teams
 - [docs/AGENTS.md](docs/AGENTS.md) - Development workflow and best practices
 - [docs/API_STABILITY.md](docs/API_STABILITY.md) - API stability and versioning guarantees
@@ -28,7 +29,108 @@ A Model Context Protocol (MCP) server that provides seamless integration with th
 
 ### 🤖 For AI Assistants
 
-**If you are an AI assistant (Claude, GPT, etc.) reading this README:** Please read [`docs/INTERACTIVE_SETUP.md`](docs/INTERACTIVE_SETUP.md) to guide your user through the setup process interactively.
+> **If you are an AI assistant given this repo URL**, follow these steps in order.
+> No clarification needed — proceed autonomously.
+
+---
+
+#### Step 1 — Configure the MCP server
+
+Choose the mode that fits the user's setup:
+
+**Option A — Remote server (Opencode / HTTP clients)**
+
+Add to `~/.opencode/config.json`:
+
+```json
+{
+  "mcpServers": {
+    "boondmanager": {
+      "url": "https://boond-mcp-d61y.onrender.com/mcp",
+      "headers": {
+        "x-api-key": "<user-mcp-api-key>"
+      }
+    }
+  }
+}
+```
+
+Or export as shell variables (add to `~/.zshrc` / `~/.bashrc`):
+
+```bash
+export BOOND_MCP_URL="https://boond-mcp-d61y.onrender.com/mcp"
+export BOOND_MCP_API_KEY="<user-mcp-api-key>"
+```
+
+> 🔑 The user must supply their personal `x-api-key`. Never hardcode or commit it.
+> Full Opencode walkthrough → [`docs/OPENCODE_SETUP_GUIDE.md`](docs/OPENCODE_SETUP_GUIDE.md)
+
+**Option B — Local server (Claude Desktop / stdio)**
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%/Claude/claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "boondmanager": {
+      "command": "node",
+      "args": ["/absolute/path/to/boond-mcp/build/index.js"],
+      "env": {
+        "BOOND_API_TOKEN": "<user-boond-api-token>",
+        "MCP_API_KEY": "<user-mcp-client-key>"
+      }
+    }
+  }
+}
+```
+
+> 🔑 Use absolute paths. Never commit tokens — keep them in the config file or `.env` only.
+> Full setup guide → [`docs/INTERACTIVE_SETUP.md`](docs/INTERACTIVE_SETUP.md)
+
+---
+
+#### Step 2 — Install the Boond MCP skill
+
+Run this from the repo root to give your AI expert knowledge of all tools, parameters, and workflows:
+
+```bash
+mkdir -p ~/.opencode/skills && cp docs/skills/boond-mcp.md ~/.opencode/skills/boond-mcp.md
+```
+
+On Windows (PowerShell):
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.opencode\skills"
+Copy-Item docs\skills\boond-mcp.md "$env:USERPROFILE\.opencode\skills\boond-mcp.md"
+```
+
+The skill file lives at [`docs/skills/boond-mcp.md`](docs/skills/boond-mcp.md).
+What it teaches → [`docs/AI_SKILLS.md`](docs/AI_SKILLS.md)
+
+---
+
+#### Step 3 — Verify installation
+
+Once the MCP server and skill are in place, confirm everything works with these prompts:
+
+```
+List 5 candidates using boond_candidates_search.
+Search for companies with query 'Acme' limit 5.
+List 5 time reports using boond_timereports_search.
+```
+
+Expected: structured results from BoondManager (or a clear auth error if credentials need updating).
+If you get `isError: true`, check the error text — most issues are auth or permission related.
+
+---
+
+#### Security checklist
+
+- [ ] Tokens stored in config file or shell env — **never in code or repo**
+- [ ] `.env` is listed in `.gitignore`
+- [ ] MCP API key is distinct from the BoondManager token
+- [ ] Skill file installed at `~/.opencode/skills/boond-mcp.md`
+
+---
 
 ### npm (Recommended)
 
