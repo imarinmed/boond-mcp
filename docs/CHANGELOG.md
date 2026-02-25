@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- ESLint configuration with TypeScript support
+- AI skill file (`docs/skills/boond-mcp.md`) with full tool catalog, workflows, auth setup, and error handling hints for AI assistants
+- AI skills installation guide (`docs/AI_SKILLS.md`) for users and AI assistants
+- Skill install instructions in README `For AI Assistants` section
 - Prettier configuration for code formatting
 - GitHub Actions CI/CD pipeline for automated validation
 - New npm scripts: lint, lint:fix, format, format:check, typecheck, validate
