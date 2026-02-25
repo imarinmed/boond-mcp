@@ -151,7 +151,7 @@ To make the tools available in Claude, you must register the server in Claude's 
 ```json
 {
   "mcpServers": {
-    "boondmanager": {
+    "boond-mcp": {
       "command": "node",
       "args": ["/Users/YOUR_USER/path/to/boond-mcp/build/index.js"],
       "env": {

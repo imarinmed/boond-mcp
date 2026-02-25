@@ -97,6 +97,17 @@ BOOND_API_TOKEN=your_api_token_here
 MCP_API_KEY=<set_a_secure_client_key>
 ```
 
+### 📛 Server Key: `boond-mcp`
+
+> **Why `boond-mcp` and not `boondmanager`?**
+> 
+> - **BoondManager** — the vendor SaaS product (API at `ui.boondmanager.com`)
+> - **`boond-mcp`** — this MCP server's canonical identifier (package name, CLI binary, and `mcpServers` key)
+> - **`boondmanager`** — legacy alias seen in configs created before v1.2; both work, but **new configs should use `boond-mcp`**
+> 
+> If you see `"boondmanager"` in an existing config, rename the key to `"boond-mcp"` for consistency.
+
+
 ### Claude Desktop Setup
 
 Add the following to your Claude Desktop configuration file:
@@ -107,7 +118,7 @@ Add the following to your Claude Desktop configuration file:
 ```json
 {
   "mcpServers": {
-    "boondmanager": {
+    "boond-mcp": {
       "command": "node",
       "args": ["/absolute/path/to/boond-mcp/build/index.js"],
       "env": {
@@ -146,7 +157,7 @@ Alternatively, create/edit `~/.opencode/config.json`:
 ```json
 {
   "mcpServers": {
-    "boondmanager": {
+    "boond-mcp": {
       "url": "https://your-mcp-server-url.com/mcp",
       "headers": {
         "x-api-key": "your_mcp_api_key_here"

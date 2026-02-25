@@ -68,7 +68,7 @@ Add the server to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "boondmanager": {
+    "boond-mcp": {
       "command": "node",
       "args": ["/path/to/boond-mcp/build/index.js"],
       "env": {

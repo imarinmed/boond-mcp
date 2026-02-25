@@ -70,7 +70,7 @@ async function main(): Promise<void> {
   try {
     // Initialize server
     const server = new McpServer({
-      name: 'boondmanager',
+      name: 'boond-mcp',
       version: '0.1.0',
     });
 

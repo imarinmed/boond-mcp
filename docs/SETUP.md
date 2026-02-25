@@ -103,7 +103,7 @@ BOOND_API_TOKEN=your_actual_api_token_here
 ```json
 {
   "mcpServers": {
-    "boondmanager": {
+    "boond-mcp": {
       "command": "bun",
       "args": ["/absolute/path/to/boond-mcp/build/index.js"],
       "env": {
@@ -135,7 +135,7 @@ pwd
    ```json
    {
      "mcpServers": {
-       "boondmanager": {
+       "boond-mcp": {
          "command": "bun",
          "args": ["C:\\absolute\\path\\to\\boond-mcp\\build\\index.js"],
          "env": {

@@ -216,7 +216,7 @@ grep -A 20 "STEP 1" examples/01-hr-candidate-workflow.ts
    ```json
    {
      "mcpServers": {
-       "boond": {
+       "boond-mcp": {
          "command": "node",
          "args": ["/path/to/boond-mcp/build/index.js"],
          "env": {

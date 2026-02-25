@@ -21,7 +21,7 @@ Create or edit `opencode.json` (or `opencode.jsonc`) and add:
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "boondmanager": {
+    "boond-mcp": {
       "type": "remote",
       "url": "https://boond-mcp-d61y.onrender.com/mcp",
       "oauth": false,
@@ -61,7 +61,7 @@ Run:
 
 ```bash
 opencode mcp list
-opencode mcp debug boondmanager
+opencode mcp debug boond-mcp
 ```
 
 Expected:
@@ -74,7 +74,7 @@ Expected:
 
 In OpenCode, try:
 
-- `List available tools from boondmanager.`
+- `List available tools from boond-mcp.`
 - `Search candidates in BoondManager.`
 - `List recent companies.`
 

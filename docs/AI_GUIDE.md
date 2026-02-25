@@ -21,6 +21,11 @@ This guide walks you through the full setup so you (the AI) can use the Boond MC
 
 Choose the option that fits the user's AI client:
 
+> **📛 Server key**: Always use `"boond-mcp"` as the `mcpServers` key — not `"boondmanager"` (legacy alias).
+> `boond-mcp` is the package name, CLI binary, and canonical MCP identifier.
+> `BoondManager` refers to the vendor SaaS product (API at `ui.boondmanager.com`) — a different thing.
+
+
 ---
 
 ### Option A — Remote server (Opencode / HTTP clients)
@@ -30,7 +35,7 @@ Add to `~/.opencode/config.json`:
 ```json
 {
   "mcpServers": {
-    "boondmanager": {
+    "boond-mcp": {
       "url": "https://boond-mcp-d61y.onrender.com/mcp",
       "headers": {
         "x-api-key": "<user-mcp-api-key>"
@@ -60,7 +65,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 ```json
 {
   "mcpServers": {
-    "boondmanager": {
+    "boond-mcp": {
       "command": "node",
       "args": ["/absolute/path/to/boond-mcp/build/index.js"],
       "env": {

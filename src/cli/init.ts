@@ -73,7 +73,7 @@ export async function initCommand(): Promise<void> {
   const projectPath = process.cwd();
   const configSnippet = {
     mcpServers: {
-      boondmanager: {
+      'boond-mcp': {
         command: 'node',
         args: [join(projectPath, 'build', 'index.js')],
         env: {
