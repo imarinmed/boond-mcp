@@ -124,6 +124,14 @@ export const updateProjectSchema = createProjectSchema.partial();
 
 export const searchTimeReportsSchema = z.object({
   resourceId: z.string().optional(),
+  startMonth: z
+    .string()
+    .regex(/^[0-9]{4}-[0-9]{2}$/, 'startMonth must be YYYY-MM')
+    .optional(),
+  endMonth: z
+    .string()
+    .regex(/^[0-9]{4}-[0-9]{2}$/, 'endMonth must be YYYY-MM')
+    .optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   status: z.enum(['draft', 'submitted', 'approved', 'rejected']).optional(),

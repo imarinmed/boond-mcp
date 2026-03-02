@@ -232,6 +232,17 @@ function getApiStatusCode(error: unknown): number | undefined {
   return typeof status === 'number' ? status : undefined;
 }
 
+function toYearMonth(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value.slice(0, 7);
+  }
+
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
+
 type BoondAuthConfig =
   | {
       type: 'x-token';
@@ -964,8 +975,15 @@ export class BoondAPIClient {
    * Search time reports
    */
   async searchTimeReports(params: SearchTimeReports): Promise<SearchResponse<TimeReport>> {
+    const currentMonth = toYearMonth(new Date().toISOString());
+    const startMonth =
+      params.startMonth || (params.startDate ? toYearMonth(params.startDate) : currentMonth);
+    const endMonth = params.endMonth || (params.endDate ? toYearMonth(params.endDate) : startMonth);
+
     const query = new URLSearchParams({
       ...(params.resourceId && { resourceId: params.resourceId }),
+      startMonth,
+      endMonth,
       ...(params.startDate && { startDate: params.startDate }),
       ...(params.endDate && { endDate: params.endDate }),
       ...(params.status && { status: params.status }),
@@ -1072,34 +1090,49 @@ export class BoondAPIClient {
   async searchDeliveries(params: SearchParams): Promise<SearchResponse<Delivery>> {
     const query = new URLSearchParams({
       ...(params.query && { query: params.query }),
+      ...(params.query && { keywords: params.query }),
       page: String(params.page),
       limit: String(Math.min(params.limit, 100)),
     });
 
-    try {
-      return await this.request<SearchResponse<Delivery>>('GET', `/deliveries?${query.toString()}`);
-    } catch (error) {
-      const statusCode = getApiStatusCode(error);
-      if (statusCode === 404 || statusCode === 405) {
-        try {
-          return await this.request<SearchResponse<Delivery>>(
-            'GET',
-            `/deliveries/search?${query.toString()}`
-          );
-        } catch (fallbackError) {
-          const fallbackStatus = getApiStatusCode(fallbackError);
-          if (fallbackStatus === 404 || fallbackStatus === 405) {
-            return this.request<SearchResponse<Delivery>>('POST', '/deliveries/search', {
-              ...(params.query ? { query: params.query } : {}),
-              page: params.page,
-              limit: Math.min(params.limit, 100),
-            });
-          }
-          throw fallbackError;
+    const listEndpoints: Array<{
+      method: 'GET' | 'POST';
+      path: string;
+      body?: Record<string, unknown>;
+    }> = [
+      { method: 'GET', path: `/deliveries-groupments?${query.toString()}` },
+      { method: 'GET', path: `/deliveries?${query.toString()}` },
+      { method: 'GET', path: `/deliveries/search?${query.toString()}` },
+      {
+        method: 'POST',
+        path: '/deliveries/search',
+        body: {
+          ...(params.query ? { query: params.query } : {}),
+          ...(params.query ? { keywords: params.query } : {}),
+          page: params.page,
+          limit: Math.min(params.limit, 100),
+        },
+      },
+    ];
+
+    let lastError: unknown;
+    for (const endpoint of listEndpoints) {
+      try {
+        return await this.request<SearchResponse<Delivery>>(
+          endpoint.method,
+          endpoint.path,
+          endpoint.body
+        );
+      } catch (error) {
+        const statusCode = getApiStatusCode(error);
+        if (statusCode !== 404 && statusCode !== 405) {
+          throw error;
         }
+        lastError = error;
       }
-      throw error;
     }
+
+    throw lastError;
   }
 
   /**
