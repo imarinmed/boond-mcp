@@ -1,41 +1,82 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { BoondAPIClient } from "../../api/client.js";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { BoondAPIClient } from '../../api/client.js';
 import {
   searchParamsSchema,
   alertIdSchema,
   updateAlertWithIdSchema,
   updateAlertSchema,
-} from "../../types/schemas.js";
-import type { Alert, SearchResponse } from "../../types/boond.js";
-import { handleSearchError, handleToolError } from "../../utils/error-handling.js";
+} from '../../types/schemas.js';
+import type { Alert, SearchResponse } from '../../types/boond.js';
+import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+
+function pickAlertType(alert: Alert): string {
+  const record = alert as unknown as Record<string, unknown>;
+  const candidates = [alert.type, record['kind'], record['category'], record['state']];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    if (typeof value === 'number') return String(value);
+  }
+  return 'info';
+}
+
+function pickAlertSeverity(alert: Alert): string {
+  const record = alert as unknown as Record<string, unknown>;
+  const candidates = [alert.severity, record['level'], record['priority'], record['importance']];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    if (typeof value === 'number') return String(value);
+  }
+  return 'unknown';
+}
+
+function pickAlertMessage(alert: Alert): string {
+  const record = alert as unknown as Record<string, unknown>;
+  const candidates = [
+    alert.message,
+    record['title'],
+    record['text'],
+    record['body'],
+    record['description'],
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+  }
+  return `Alert #${alert.id}`;
+}
 
 function formatAlertList(result: SearchResponse<Alert>): string {
   if (result.data.length === 0) {
-    return "No alerts found.";
+    return 'No alerts found.';
   }
 
-  const alerts = result.data.map((alert) => {
+  const alerts = result.data.map(alert => {
     const lines: string[] = [];
-    const icon = alert.type === "error" ? "🔴" : alert.type === "warning" ? "🟡" : alert.type === "success" ? "🟢" : "ℹ️";
-    lines.push(`${icon} ${alert.message} (ID: ${alert.id})`);
-    lines.push(`   Type: ${alert.type} | Severity: ${alert.severity}`);
+    const type = pickAlertType(alert);
+    const severity = pickAlertSeverity(alert);
+    const icon =
+      type === 'error' ? '🔴' : type === 'warning' ? '🟡' : type === 'success' ? '🟢' : 'ℹ️';
+    lines.push(`${icon} ${pickAlertMessage(alert)} (ID: ${alert.id})`);
+    lines.push(`   Type: ${type} | Severity: ${severity}`);
     if (!alert.resolvedAt) lines.push(`   Status: Unresolved`);
     else lines.push(`   Resolved: ${alert.resolvedAt}`);
-    return lines.join("\n");
+    return lines.join('\n');
   });
 
   const summary = `Found ${result.data.length} alert(s) (Page ${result.pagination.page}/${Math.ceil(result.pagination.total / result.pagination.limit)} of ${result.pagination.total} total)`;
 
-  return `${summary}\n\n${alerts.join("\n\n")}`;
+  return `${summary}\n\n${alerts.join('\n\n')}`;
 }
 
 function formatAlert(alert: Alert): string {
-  const icon = alert.type === "error" ? "🔴" : alert.type === "warning" ? "🟡" : alert.type === "success" ? "🟢" : "ℹ️";
+  const type = pickAlertType(alert);
+  const severity = pickAlertSeverity(alert);
+  const icon =
+    type === 'error' ? '🔴' : type === 'warning' ? '🟡' : type === 'success' ? '🟢' : 'ℹ️';
   const lines: string[] = [];
-  lines.push(`${icon} Alert: ${alert.message}`);
+  lines.push(`${icon} Alert: ${pickAlertMessage(alert)}`);
   lines.push(`ID: ${alert.id}`);
-  lines.push(`Type: ${alert.type}`);
-  lines.push(`Severity: ${alert.severity}`);
+  lines.push(`Type: ${type}`);
+  lines.push(`Severity: ${severity}`);
   lines.push(`Created: ${alert.createdAt}`);
   if (alert.resolvedAt) {
     lines.push(`Resolved: ${alert.resolvedAt}`);
@@ -43,41 +84,38 @@ function formatAlert(alert: Alert): string {
     lines.push(`Status: Unresolved`);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
-export function registerAlertTools(
-  server: McpServer,
-  client: BoondAPIClient
-): void {
+export function registerAlertTools(server: McpServer, client: BoondAPIClient): void {
   server.registerTool(
-    "boond_alerts_search",
+    'boond_alerts_search',
     {
-      description: "Search alerts by criteria",
+      description: 'Search alerts by criteria',
       inputSchema: searchParamsSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = searchParamsSchema.parse(params);
         const result = await client.searchAlerts(validated);
         const text = formatAlertList(result);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleSearchError(error, "alerts");
+        return handleSearchError(error, 'alerts');
       }
     }
   );
 
   server.registerTool(
-    "boond_alerts_get",
+    'boond_alerts_get',
     {
-      description: "Get an alert by ID",
+      description: 'Get an alert by ID',
       inputSchema: alertIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = alertIdSchema.parse(params);
         const alert = await client.getAlert(validated.id);
@@ -85,21 +123,21 @@ export function registerAlertTools(
         const text = formatAlert(alert);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleToolError(error, "retrieving", "Alert");
+        return handleToolError(error, 'retrieving', 'Alert');
       }
     }
   );
 
   server.registerTool(
-    "boond_alerts_update",
+    'boond_alerts_update',
     {
-      description: "Update an alert status (mark as resolved)",
+      description: 'Update an alert status (mark as resolved)',
       inputSchema: updateAlertWithIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const { id, ...updateData } = updateAlertWithIdSchema.parse(params);
         const validated = updateAlertSchema.parse(updateData);
@@ -111,13 +149,13 @@ export function registerAlertTools(
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `Alert updated successfully!\n\n${text}`,
             },
           ],
         };
       } catch (error) {
-        return handleToolError(error, "updating", "Alert");
+        return handleToolError(error, 'updating', 'Alert');
       }
     }
   );

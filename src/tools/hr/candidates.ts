@@ -14,6 +14,53 @@ import type { Candidate, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { ValidationError } from '../../api/client.js';
 
+function pickCandidateName(candidate: Candidate): string {
+  const record = candidate as unknown as Record<string, unknown>;
+  const firstName =
+    (typeof candidate.firstName === 'string' ? candidate.firstName : undefined) ||
+    (typeof record['firstName'] === 'string' ? (record['firstName'] as string) : undefined) ||
+    (typeof record['firstname'] === 'string' ? (record['firstname'] as string) : undefined) ||
+    '';
+  const lastName =
+    (typeof candidate.lastName === 'string' ? candidate.lastName : undefined) ||
+    (typeof record['lastName'] === 'string' ? (record['lastName'] as string) : undefined) ||
+    (typeof record['lastname'] === 'string' ? (record['lastname'] as string) : undefined) ||
+    '';
+  const full = `${firstName} ${lastName}`.trim();
+  return full || `Candidate #${candidate.id}`;
+}
+
+function pickCandidateEmail(candidate: Candidate): string {
+  const record = candidate as unknown as Record<string, unknown>;
+  const candidates = [
+    candidate.email,
+    record['email'],
+    record['email1'],
+    record['email_1'],
+    record['mail'],
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+  }
+  return 'not available';
+}
+
+function pickCandidateStatus(candidate: Candidate): string {
+  const record = candidate as unknown as Record<string, unknown>;
+  const candidates = [
+    candidate.status,
+    record['state'],
+    record['workflowStatus'],
+    record['validationStatus'],
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'boolean') return value ? 'active' : 'inactive';
+  }
+  return 'unknown';
+}
+
 /**
  * Format candidate list for display
  */
@@ -24,10 +71,10 @@ function formatCandidateList(result: SearchResponse<Candidate>): string {
 
   const candidates = result.data.map(candidate => {
     const lines: string[] = [];
-    lines.push(`👤 ${candidate.firstName} ${candidate.lastName} (ID: ${candidate.id})`);
-    lines.push(`   Email: ${candidate.email}`);
+    lines.push(`👤 ${pickCandidateName(candidate)} (ID: ${candidate.id})`);
+    lines.push(`   Email: ${pickCandidateEmail(candidate)}`);
     if (candidate.phone) lines.push(`   Phone: ${candidate.phone}`);
-    lines.push(`   Status: ${candidate.status}`);
+    lines.push(`   Status: ${pickCandidateStatus(candidate)}`);
     if (candidate.address) lines.push(`   Address: ${candidate.address}`);
     if (candidate.city) lines.push(`   City: ${candidate.city}`);
     if (candidate.country) lines.push(`   Country: ${candidate.country}`);
@@ -44,11 +91,11 @@ function formatCandidateList(result: SearchResponse<Candidate>): string {
  */
 function formatCandidate(candidate: Candidate): string {
   const lines: string[] = [];
-  lines.push(`👤 Candidate: ${candidate.firstName} ${candidate.lastName}`);
+  lines.push(`👤 Candidate: ${pickCandidateName(candidate)}`);
   lines.push(`ID: ${candidate.id}`);
-  lines.push(`Email: ${candidate.email}`);
+  lines.push(`Email: ${pickCandidateEmail(candidate)}`);
   if (candidate.phone) lines.push(`Phone: ${candidate.phone}`);
-  lines.push(`Status: ${candidate.status}`);
+  lines.push(`Status: ${pickCandidateStatus(candidate)}`);
   if (candidate.address) lines.push(`Address: ${candidate.address}`);
   if (candidate.city) lines.push(`City: ${candidate.city}`);
   if (candidate.country) lines.push(`Country: ${candidate.country}`);

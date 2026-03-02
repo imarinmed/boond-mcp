@@ -14,6 +14,56 @@ import type { Contract, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { ValidationError } from '../../api/client.js';
 
+function pickContractResource(contract: Contract): string {
+  const record = contract as unknown as Record<string, unknown>;
+  const candidates = [
+    contract.resourceId,
+    record['resourceId'],
+    record['dependsOnId'],
+    record['consultantId'],
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    if (typeof value === 'number') return String(value);
+  }
+  return 'unknown';
+}
+
+function pickContractType(contract: Contract): string {
+  const record = contract as unknown as Record<string, unknown>;
+  const candidates = [contract.type, record['contractType'], record['typeLabel'], record['kind']];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    if (typeof value === 'number') return String(value);
+  }
+  return 'unknown';
+}
+
+function pickContractStatus(contract: Contract): string {
+  const record = contract as unknown as Record<string, unknown>;
+  const candidates = [
+    contract.status,
+    record['state'],
+    record['workflowStatus'],
+    record['validationStatus'],
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'boolean') return value ? 'active' : 'inactive';
+  }
+  return 'unknown';
+}
+
+function pickContractStartDate(contract: Contract): string {
+  const record = contract as unknown as Record<string, unknown>;
+  const candidates = [contract.startDate, record['startsAt'], record['start']];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+  }
+  return 'unknown';
+}
+
 /**
  * Format contract list for display
  */
@@ -25,10 +75,10 @@ function formatContractList(result: SearchResponse<Contract>): string {
   const contracts = result.data.map(contract => {
     const lines: string[] = [];
     lines.push(`📋 Contract ID: ${contract.id}`);
-    lines.push(`   Resource: ${contract.resourceId}`);
-    lines.push(`   Type: ${contract.type}`);
-    lines.push(`   Status: ${contract.status}`);
-    lines.push(`   Start Date: ${contract.startDate}`);
+    lines.push(`   Resource: ${pickContractResource(contract)}`);
+    lines.push(`   Type: ${pickContractType(contract)}`);
+    lines.push(`   Status: ${pickContractStatus(contract)}`);
+    lines.push(`   Start Date: ${pickContractStartDate(contract)}`);
     if (contract.endDate) lines.push(`   End Date: ${contract.endDate}`);
     if (contract.hourlyRate) lines.push(`   Hourly Rate: $${contract.hourlyRate}`);
     return lines.join('\n');
@@ -45,10 +95,10 @@ function formatContractList(result: SearchResponse<Contract>): string {
 function formatContract(contract: Contract): string {
   const lines: string[] = [];
   lines.push(`📋 Contract: ${contract.id}`);
-  lines.push(`Resource ID: ${contract.resourceId}`);
-  lines.push(`Type: ${contract.type}`);
-  lines.push(`Status: ${contract.status}`);
-  lines.push(`Start Date: ${contract.startDate}`);
+  lines.push(`Resource ID: ${pickContractResource(contract)}`);
+  lines.push(`Type: ${pickContractType(contract)}`);
+  lines.push(`Status: ${pickContractStatus(contract)}`);
+  lines.push(`Start Date: ${pickContractStartDate(contract)}`);
   if (contract.endDate) lines.push(`End Date: ${contract.endDate}`);
   if (contract.hourlyRate) lines.push(`Hourly Rate: $${contract.hourlyRate}`);
   if (contract.createdAt) lines.push(`Created: ${contract.createdAt}`);

@@ -14,6 +14,50 @@ import type { Contact, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { ValidationError } from '../../api/client.js';
 
+function pickContactName(contact: Contact): string {
+  const record = contact as unknown as Record<string, unknown>;
+  const first =
+    (typeof contact.firstName === 'string' ? contact.firstName : undefined) ||
+    (typeof record['firstName'] === 'string' ? (record['firstName'] as string) : undefined) ||
+    '';
+  const last =
+    (typeof contact.lastName === 'string' ? contact.lastName : undefined) ||
+    (typeof record['lastName'] === 'string' ? (record['lastName'] as string) : undefined) ||
+    '';
+  const full = `${first} ${last}`.trim();
+  return full || `Contact #${contact.id}`;
+}
+
+function pickContactEmail(contact: Contact): string {
+  const record = contact as unknown as Record<string, unknown>;
+  const candidates = [
+    contact.email,
+    record['email'],
+    record['email1'],
+    record['email_1'],
+    record['mail'],
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+  }
+  return 'not available';
+}
+
+function pickContactCompanyId(contact: Contact): string {
+  const record = contact as unknown as Record<string, unknown>;
+  const candidates = [
+    contact.companyId,
+    record['companyId'],
+    record['clientId'],
+    record['accountId'],
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    if (typeof value === 'number') return String(value);
+  }
+  return 'unknown';
+}
+
 /**
  * Format contact list for display
  */
@@ -24,10 +68,10 @@ function formatContactList(result: SearchResponse<Contact>): string {
 
   const contacts = result.data.map(contact => {
     const lines: string[] = [];
-    lines.push(`👤 ${contact.firstName} ${contact.lastName} (ID: ${contact.id})`);
-    lines.push(`   Email: ${contact.email}`);
+    lines.push(`👤 ${pickContactName(contact)} (ID: ${contact.id})`);
+    lines.push(`   Email: ${pickContactEmail(contact)}`);
     if (contact.phone) lines.push(`   Phone: ${contact.phone}`);
-    lines.push(`   Company ID: ${contact.companyId}`);
+    lines.push(`   Company ID: ${pickContactCompanyId(contact)}`);
     if (contact.jobTitle) lines.push(`   Job Title: ${contact.jobTitle}`);
     if (contact.department) lines.push(`   Department: ${contact.department}`);
     return lines.join('\n');
@@ -43,11 +87,11 @@ function formatContactList(result: SearchResponse<Contact>): string {
  */
 function formatContact(contact: Contact): string {
   const lines: string[] = [];
-  lines.push(`👤 Contact: ${contact.firstName} ${contact.lastName}`);
+  lines.push(`👤 Contact: ${pickContactName(contact)}`);
   lines.push(`ID: ${contact.id}`);
-  lines.push(`Email: ${contact.email}`);
+  lines.push(`Email: ${pickContactEmail(contact)}`);
   if (contact.phone) lines.push(`Phone: ${contact.phone}`);
-  lines.push(`Company ID: ${contact.companyId}`);
+  lines.push(`Company ID: ${pickContactCompanyId(contact)}`);
   if (contact.jobTitle) lines.push(`Job Title: ${contact.jobTitle}`);
   if (contact.department) lines.push(`Department: ${contact.department}`);
   if (contact.createdAt) lines.push(`Created: ${contact.createdAt}`);

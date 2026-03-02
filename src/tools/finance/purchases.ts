@@ -13,6 +13,46 @@ import {
 import type { Purchase, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 
+function pickPurchaseStatus(purchase: Purchase): string {
+  const record = purchase as unknown as Record<string, unknown>;
+  const candidates = [
+    purchase.status,
+    record['state'],
+    record['workflowStatus'],
+    record['validationStatus'],
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    if (typeof value === 'number') return String(value);
+  }
+  return 'unknown';
+}
+
+function pickPurchaseCompany(purchase: Purchase): string {
+  const record = purchase as unknown as Record<string, unknown>;
+  const candidates = [
+    purchase.companyId,
+    record['companyId'],
+    record['clientId'],
+    record['accountId'],
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+    if (typeof value === 'number') return String(value);
+  }
+  return 'unknown';
+}
+
+function pickPurchaseTotal(purchase: Purchase): string {
+  const record = purchase as unknown as Record<string, unknown>;
+  const candidates = [purchase.total, record['amount'], record['totalAmount'], record['sum']];
+  for (const value of candidates) {
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+  }
+  return 'unknown';
+}
+
 /**
  * Format purchase list for display
  */
@@ -23,9 +63,9 @@ function formatPurchaseList(result: SearchResponse<Purchase>): string {
 
   const purchases = result.data.map(purchase => {
     const lines: string[] = [];
-    lines.push(`📦 Purchase #${purchase.id} (Status: ${purchase.status})`);
-    lines.push(`   Company: ${purchase.companyId}`);
-    lines.push(`   Total: ${purchase.total}`);
+    lines.push(`📦 Purchase #${purchase.id} (Status: ${pickPurchaseStatus(purchase)})`);
+    lines.push(`   Company: ${pickPurchaseCompany(purchase)}`);
+    lines.push(`   Total: ${pickPurchaseTotal(purchase)}`);
     if (purchase.orderedAt) lines.push(`   Ordered: ${purchase.orderedAt}`);
     if (purchase.receivedAt) lines.push(`   Received: ${purchase.receivedAt}`);
     return lines.join('\n');
@@ -42,9 +82,9 @@ function formatPurchaseList(result: SearchResponse<Purchase>): string {
 function formatPurchase(purchase: Purchase): string {
   const lines: string[] = [];
   lines.push(`📦 Purchase: ${purchase.id}`);
-  lines.push(`Status: ${purchase.status}`);
-  lines.push(`Company: ${purchase.companyId}`);
-  lines.push(`Total: ${purchase.total}`);
+  lines.push(`Status: ${pickPurchaseStatus(purchase)}`);
+  lines.push(`Company: ${pickPurchaseCompany(purchase)}`);
+  lines.push(`Total: ${pickPurchaseTotal(purchase)}`);
   if (purchase.orderedAt) lines.push(`Ordered: ${purchase.orderedAt}`);
   if (purchase.receivedAt) lines.push(`Received: ${purchase.receivedAt}`);
   if (purchase.items && purchase.items.length > 0) {
