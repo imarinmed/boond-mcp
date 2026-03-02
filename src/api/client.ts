@@ -151,6 +151,11 @@ function applyAliases(record: Record<string, unknown>): Record<string, unknown> 
     { target: 'email', sources: ['email1', 'email_1', 'mail', 'primaryEmail'] },
     { target: 'firstName', sources: ['firstname', 'givenName'] },
     { target: 'lastName', sources: ['lastname', 'familyName'] },
+    { target: 'name', sources: ['title', 'reference', 'label'] },
+    { target: 'companyId', sources: ['clientId', 'customerId', 'accountId'] },
+    { target: 'projectId', sources: ['missionId', 'assignmentId'] },
+    { target: 'resourceId', sources: ['dependsOnId', 'consultantId'] },
+    { target: 'total', sources: ['amount', 'amountTotal', 'totalAmount', 'sum'] },
     { target: 'dailyRate', sources: ['rate', 'tjm', 'dailySellRate'] },
     { target: 'hourlyRate', sources: ['hourRate'] },
     { target: 'salaryAnnual', sources: ['annualSalary', 'yearlySalary', 'salary'] },
@@ -930,21 +935,48 @@ export class BoondAPIClient {
       limit: String(Math.min(params.limit, 100)), // Cap at 100
     });
 
-    return this.request<SearchResponse<TimeReport>>('GET', `/time-reports?${query.toString()}`);
+    try {
+      return await this.request<SearchResponse<TimeReport>>(
+        'GET',
+        `/times-reports?${query.toString()}`
+      );
+    } catch (error) {
+      const statusCode = getApiStatusCode(error);
+      if (statusCode === 404 || statusCode === 405) {
+        return this.request<SearchResponse<TimeReport>>('GET', `/time-reports?${query.toString()}`);
+      }
+      throw error;
+    }
   }
 
   /**
    * Get time report by ID
    */
   async getTimeReport(id: string): Promise<TimeReport> {
-    return this.request<TimeReport>('GET', `/time-reports/${encodeURIComponent(id)}`);
+    try {
+      return await this.request<TimeReport>('GET', `/times-reports/${encodeURIComponent(id)}`);
+    } catch (error) {
+      const statusCode = getApiStatusCode(error);
+      if (statusCode === 404 || statusCode === 405) {
+        return this.request<TimeReport>('GET', `/time-reports/${encodeURIComponent(id)}`);
+      }
+      throw error;
+    }
   }
 
   /**
    * Create time report
    */
   async createTimeReport(data: CreateTimeReport): Promise<TimeReport> {
-    return this.request<TimeReport>('POST', '/time-reports', data);
+    try {
+      return await this.request<TimeReport>('POST', '/times-reports', data);
+    } catch (error) {
+      const statusCode = getApiStatusCode(error);
+      if (statusCode === 404 || statusCode === 405) {
+        return this.request<TimeReport>('POST', '/time-reports', data);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -1257,24 +1289,54 @@ export class BoondAPIClient {
       limit: String(Math.min(params.limit, 100)),
     });
 
-    return this.request<SearchResponse<ExpenseReport>>(
-      'GET',
-      `/expense-reports?${query.toString()}`
-    );
+    try {
+      return await this.request<SearchResponse<ExpenseReport>>(
+        'GET',
+        `/expenses-reports?${query.toString()}`
+      );
+    } catch (error) {
+      const statusCode = getApiStatusCode(error);
+      if (statusCode === 404 || statusCode === 405) {
+        return this.request<SearchResponse<ExpenseReport>>(
+          'GET',
+          `/expense-reports?${query.toString()}`
+        );
+      }
+      throw error;
+    }
   }
 
   /**
    * Get expense report by ID
    */
   async getExpenseReport(id: string): Promise<ExpenseReport> {
-    return this.request<ExpenseReport>('GET', `/expense-reports/${encodeURIComponent(id)}`);
+    try {
+      return await this.request<ExpenseReport>(
+        'GET',
+        `/expenses-reports/${encodeURIComponent(id)}`
+      );
+    } catch (error) {
+      const statusCode = getApiStatusCode(error);
+      if (statusCode === 404 || statusCode === 405) {
+        return this.request<ExpenseReport>('GET', `/expense-reports/${encodeURIComponent(id)}`);
+      }
+      throw error;
+    }
   }
 
   /**
    * Create expense report
    */
   async createExpenseReport(data: CreateExpenseReport): Promise<ExpenseReport> {
-    return this.request<ExpenseReport>('POST', '/expense-reports', data);
+    try {
+      return await this.request<ExpenseReport>('POST', '/expenses-reports', data);
+    } catch (error) {
+      const statusCode = getApiStatusCode(error);
+      if (statusCode === 404 || statusCode === 405) {
+        return this.request<ExpenseReport>('POST', '/expense-reports', data);
+      }
+      throw error;
+    }
   }
 
   /**
