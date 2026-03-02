@@ -35,6 +35,8 @@ function pickOrderCompany(order: Order): string {
     record['companyId'],
     record['clientId'],
     record['accountId'],
+    record['dependsOnId'],
+    record['customerId'],
   ];
   for (const value of candidates) {
     if (typeof value === 'string' && value.trim().length > 0) return value;
@@ -45,7 +47,15 @@ function pickOrderCompany(order: Order): string {
 
 function pickOrderTotal(order: Order): string {
   const record = order as unknown as Record<string, unknown>;
-  const candidates = [order.total, record['amount'], record['totalAmount'], record['sum']];
+  const candidates = [
+    order.total,
+    record['amount'],
+    record['totalAmount'],
+    record['sum'],
+    record['amountWithoutTaxes'],
+    record['amountExcludingTax'],
+    record['netAmount'],
+  ];
   for (const value of candidates) {
     if (typeof value === 'number') return String(value);
     if (typeof value === 'string' && value.trim().length > 0) return value;

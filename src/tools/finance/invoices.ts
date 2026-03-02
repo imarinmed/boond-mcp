@@ -35,6 +35,8 @@ function pickInvoiceCompany(invoice: Invoice): string {
     record['companyId'],
     record['clientId'],
     record['accountId'],
+    record['dependsOnId'],
+    record['customerId'],
   ];
   for (const value of candidates) {
     if (typeof value === 'string' && value.trim().length > 0) return value;
@@ -45,7 +47,15 @@ function pickInvoiceCompany(invoice: Invoice): string {
 
 function pickInvoiceTotal(invoice: Invoice): string {
   const record = invoice as unknown as Record<string, unknown>;
-  const candidates = [invoice.total, record['amount'], record['totalAmount'], record['sum']];
+  const candidates = [
+    invoice.total,
+    record['amount'],
+    record['totalAmount'],
+    record['sum'],
+    record['amountWithoutTaxes'],
+    record['amountExcludingTax'],
+    record['netAmount'],
+  ];
   for (const value of candidates) {
     if (typeof value === 'number') return String(value);
     if (typeof value === 'string' && value.trim().length > 0) return value;
