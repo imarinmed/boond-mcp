@@ -14,6 +14,49 @@ import type { Resource, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { ValidationError } from '../../api/client.js';
 
+function pickString(record: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function pickStatus(resource: Resource): string {
+  const record = resource as unknown as Record<string, unknown>;
+  const status = pickString(record, ['status', 'state', 'workflowStatus', 'validationStatus']);
+  if (status) {
+    return status;
+  }
+
+  const isActive = record['isActive'];
+  if (typeof isActive === 'boolean') {
+    return isActive ? 'active' : 'inactive';
+  }
+
+  return 'unknown';
+}
+
+function pickEmail(resource: Resource): string {
+  const record = resource as unknown as Record<string, unknown>;
+  const email = pickString(record, ['email', 'email1', 'email_1', 'mail', 'primaryEmail']);
+  if (email) {
+    return email;
+  }
+
+  const emails = record['emails'];
+  if (Array.isArray(emails)) {
+    const first = emails.find(value => typeof value === 'string' && value.trim().length > 0);
+    if (typeof first === 'string') {
+      return first;
+    }
+  }
+
+  return 'not available';
+}
+
 /**
  * Format resource list for display
  */
@@ -25,9 +68,9 @@ function formatResourceList(result: SearchResponse<Resource>): string {
   const resources = result.data.map(resource => {
     const lines: string[] = [];
     lines.push(`👤 ${resource.firstName} ${resource.lastName} (ID: ${resource.id})`);
-    lines.push(`   Email: ${resource.email}`);
+    lines.push(`   Email: ${pickEmail(resource)}`);
     if (resource.phone) lines.push(`   Phone: ${resource.phone}`);
-    lines.push(`   Status: ${resource.status}`);
+    lines.push(`   Status: ${pickStatus(resource)}`);
     if (resource.department) lines.push(`   Department: ${resource.department}`);
     if (resource.skills && resource.skills.length > 0)
       lines.push(`   Skills: ${resource.skills.join(', ')}`);
@@ -47,9 +90,9 @@ function formatResource(resource: Resource): string {
   const lines: string[] = [];
   lines.push(`👤 Resource: ${resource.firstName} ${resource.lastName}`);
   lines.push(`ID: ${resource.id}`);
-  lines.push(`Email: ${resource.email}`);
+  lines.push(`Email: ${pickEmail(resource)}`);
   if (resource.phone) lines.push(`Phone: ${resource.phone}`);
-  lines.push(`Status: ${resource.status}`);
+  lines.push(`Status: ${pickStatus(resource)}`);
   if (resource.department) lines.push(`Department: ${resource.department}`);
   if (resource.skills && resource.skills.length > 0)
     lines.push(`Skills: ${resource.skills.join(', ')}`);

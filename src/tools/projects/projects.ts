@@ -5,6 +5,23 @@ import { searchProjectsSchema, projectIdSchema } from '../../types/schemas.js';
 import type { Project, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 
+function pickProjectStatus(project: Project): string {
+  const record = project as unknown as Record<string, unknown>;
+  const candidates = ['status', 'state', 'workflowStatus', 'validationStatus', 'activity'];
+
+  for (const key of candidates) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'active' : 'inactive';
+    }
+  }
+
+  return 'unknown';
+}
+
 function formatProjectList(result: SearchResponse<Project>): string {
   if (result.data.length === 0) {
     return 'No projects found.';
@@ -13,7 +30,7 @@ function formatProjectList(result: SearchResponse<Project>): string {
   const projects = result.data.map(project => {
     const lines: string[] = [];
     lines.push(`📋 ${project.name} (ID: ${project.id})`);
-    lines.push(`   Status: ${project.status}`);
+    lines.push(`   Status: ${pickProjectStatus(project)}`);
     lines.push(`   Company ID: ${project.companyId}`);
     if (project.startDate) lines.push(`   Start: ${project.startDate}`);
     if (project.endDate) lines.push(`   End: ${project.endDate}`);
@@ -31,7 +48,7 @@ function formatProject(project: Project): string {
   const lines: string[] = [];
   lines.push(`📋 Project: ${project.name}`);
   lines.push(`ID: ${project.id}`);
-  lines.push(`Status: ${project.status}`);
+  lines.push(`Status: ${pickProjectStatus(project)}`);
   lines.push(`Company ID: ${project.companyId}`);
   if (project.startDate) lines.push(`Start Date: ${project.startDate}`);
   if (project.endDate) lines.push(`End Date: ${project.endDate}`);
