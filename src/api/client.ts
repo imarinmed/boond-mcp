@@ -147,7 +147,10 @@ function extractRelationshipIds(relationships: unknown): Record<string, unknown>
 
 function applyAliases(record: Record<string, unknown>): Record<string, unknown> {
   const aliases: Array<{ target: string; sources: string[] }> = [
-    { target: 'status', sources: ['state', 'workflowState', 'currentState'] },
+    {
+      target: 'status',
+      sources: ['state', 'workflowState', 'currentState', 'activity', 'enabled'],
+    },
     { target: 'email', sources: ['email1', 'email_1', 'mail', 'primaryEmail'] },
     { target: 'firstName', sources: ['firstname', 'givenName'] },
     { target: 'lastName', sources: ['lastname', 'familyName'] },
@@ -180,6 +183,30 @@ function applyAliases(record: Record<string, unknown>): Record<string, unknown> 
     const fullName = `${firstName} ${lastName}`.trim();
     if (fullName.length > 0) {
       record['fullName'] = fullName;
+    }
+  }
+
+  if (!record['email']) {
+    const emails = record['emails'];
+    if (Array.isArray(emails)) {
+      const firstEmail = emails.find(value => typeof value === 'string') as string | undefined;
+      if (firstEmail) {
+        record['email'] = firstEmail;
+      }
+    } else if (emails && typeof emails === 'object') {
+      const candidate = Object.values(emails as Record<string, unknown>).find(
+        value => typeof value === 'string'
+      );
+      if (typeof candidate === 'string') {
+        record['email'] = candidate;
+      }
+    }
+  }
+
+  if (record['status'] === undefined || record['status'] === null) {
+    const isActive = record['isActive'];
+    if (typeof isActive === 'boolean') {
+      record['status'] = isActive ? 'active' : 'inactive';
     }
   }
 
@@ -840,12 +867,23 @@ export class BoondAPIClient {
       return await this.request<SearchResponse<Contract>>('GET', `/contracts?${query.toString()}`);
     } catch (error) {
       const statusCode = getApiStatusCode(error);
-      if (statusCode === 405 || statusCode === 404) {
-        return this.request<SearchResponse<Contract>>('POST', '/contracts/search', {
-          ...(params.query ? { query: params.query } : {}),
-          page: params.page,
-          limit: Math.min(params.limit, 100),
-        });
+      if (statusCode === 404 || statusCode === 405) {
+        try {
+          return await this.request<SearchResponse<Contract>>(
+            'GET',
+            `/contracts/search?${query.toString()}`
+          );
+        } catch (fallbackError) {
+          const fallbackStatus = getApiStatusCode(fallbackError);
+          if (fallbackStatus === 404 || fallbackStatus === 405) {
+            return this.request<SearchResponse<Contract>>('POST', '/contracts/search', {
+              ...(params.query ? { query: params.query } : {}),
+              page: params.page,
+              limit: Math.min(params.limit, 100),
+            });
+          }
+          throw fallbackError;
+        }
       }
       throw error;
     }
@@ -942,7 +980,7 @@ export class BoondAPIClient {
       );
     } catch (error) {
       const statusCode = getApiStatusCode(error);
-      if (statusCode === 404 || statusCode === 405) {
+      if (statusCode === 404 || statusCode === 405 || statusCode === 422) {
         return this.request<SearchResponse<TimeReport>>('GET', `/time-reports?${query.toString()}`);
       }
       throw error;
@@ -1042,12 +1080,23 @@ export class BoondAPIClient {
       return await this.request<SearchResponse<Delivery>>('GET', `/deliveries?${query.toString()}`);
     } catch (error) {
       const statusCode = getApiStatusCode(error);
-      if (statusCode === 405 || statusCode === 404) {
-        return this.request<SearchResponse<Delivery>>('POST', '/deliveries/search', {
-          ...(params.query ? { query: params.query } : {}),
-          page: params.page,
-          limit: Math.min(params.limit, 100),
-        });
+      if (statusCode === 404 || statusCode === 405) {
+        try {
+          return await this.request<SearchResponse<Delivery>>(
+            'GET',
+            `/deliveries/search?${query.toString()}`
+          );
+        } catch (fallbackError) {
+          const fallbackStatus = getApiStatusCode(fallbackError);
+          if (fallbackStatus === 404 || fallbackStatus === 405) {
+            return this.request<SearchResponse<Delivery>>('POST', '/deliveries/search', {
+              ...(params.query ? { query: params.query } : {}),
+              page: params.page,
+              limit: Math.min(params.limit, 100),
+            });
+          }
+          throw fallbackError;
+        }
       }
       throw error;
     }
