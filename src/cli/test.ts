@@ -33,7 +33,7 @@ export async function testCommand(): Promise<void> {
 
   console.log('✅ Configuration loaded');
 
-  const apiUrl = envVars['BOOND_API_URL'] || 'https://ui.boondmanager.com/api/1.0';
+  const apiUrl = envVars['BOOND_API_URL'] || 'https://ui.boondmanager.com/api';
   console.log(`ℹ️  API URL: ${apiUrl}`);
 
   console.log('\n🔄 Testing API connection...');

@@ -40,11 +40,11 @@ export async function initCommand(): Promise<void> {
     default: false,
   });
 
-  let apiUrl = 'https://ui.boondmanager.com/api/1.0';
+  let apiUrl = 'https://ui.boondmanager.com/api';
   if (useCustomUrl) {
     apiUrl = await input({
       message: 'Enter custom API URL:',
-      default: 'https://ui.boondmanager.com/api/1.0',
+      default: 'https://ui.boondmanager.com/api',
       required: true,
     });
   }
