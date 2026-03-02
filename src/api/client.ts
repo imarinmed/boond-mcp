@@ -89,6 +89,117 @@ import type {
 
 type BoondJwtMode = 'normal' | 'god';
 
+type JsonApiEntity = {
+  id: string;
+  attributes?: Record<string, unknown>;
+  relationships?: unknown;
+};
+
+function toCamelCase(value: string): string {
+  return value.replace(/[_-]([a-z])/g, (_, char: string) => char.toUpperCase());
+}
+
+function normalizeKeys(record: Record<string, unknown>): Record<string, unknown> {
+  const normalized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record)) {
+    normalized[toCamelCase(key)] = value;
+  }
+  return normalized;
+}
+
+function extractRelationshipIds(relationships: unknown): Record<string, unknown> {
+  if (!relationships || typeof relationships !== 'object') {
+    return {};
+  }
+
+  const output: Record<string, unknown> = {};
+  for (const [relName, relValue] of Object.entries(relationships as Record<string, unknown>)) {
+    if (!relValue || typeof relValue !== 'object' || !('data' in relValue)) {
+      continue;
+    }
+
+    const data = (relValue as { data?: unknown }).data;
+    const normalizedName = toCamelCase(relName);
+
+    if (Array.isArray(data)) {
+      const ids = data
+        .map(item => {
+          if (item && typeof item === 'object' && 'id' in item) {
+            return String((item as { id: unknown }).id);
+          }
+          return undefined;
+        })
+        .filter((id): id is string => Boolean(id));
+
+      if (ids.length > 0) {
+        output[`${normalizedName}Ids`] = ids;
+      }
+      continue;
+    }
+
+    if (data && typeof data === 'object' && 'id' in data) {
+      output[`${normalizedName}Id`] = String((data as { id: unknown }).id);
+    }
+  }
+
+  return output;
+}
+
+function applyAliases(record: Record<string, unknown>): Record<string, unknown> {
+  const aliases: Array<{ target: string; sources: string[] }> = [
+    { target: 'status', sources: ['state', 'workflowState', 'currentState'] },
+    { target: 'email', sources: ['email1', 'email_1', 'mail', 'primaryEmail'] },
+    { target: 'firstName', sources: ['firstname', 'givenName'] },
+    { target: 'lastName', sources: ['lastname', 'familyName'] },
+    { target: 'dailyRate', sources: ['rate', 'tjm', 'dailySellRate'] },
+    { target: 'hourlyRate', sources: ['hourRate'] },
+    { target: 'salaryAnnual', sources: ['annualSalary', 'yearlySalary', 'salary'] },
+  ];
+
+  for (const alias of aliases) {
+    if (record[alias.target] !== undefined && record[alias.target] !== null) {
+      continue;
+    }
+
+    const sourceKey = alias.sources.find(
+      source => record[source] !== undefined && record[source] !== null
+    );
+    if (sourceKey) {
+      record[alias.target] = record[sourceKey];
+    }
+  }
+
+  if (!record['fullName']) {
+    const firstName = typeof record['firstName'] === 'string' ? record['firstName'] : '';
+    const lastName = typeof record['lastName'] === 'string' ? record['lastName'] : '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    if (fullName.length > 0) {
+      record['fullName'] = fullName;
+    }
+  }
+
+  return record;
+}
+
+function normalizeJsonApiEntity(entity: JsonApiEntity): Record<string, unknown> {
+  const normalizedAttributes = normalizeKeys(entity.attributes ?? {});
+  const relationshipIds = extractRelationshipIds(entity.relationships);
+  return applyAliases({
+    id: entity.id,
+    ...normalizedAttributes,
+    ...relationshipIds,
+  });
+}
+
+function getApiStatusCode(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object' || !('statusCode' in error)) {
+    return undefined;
+  }
+
+  const status = (error as { statusCode?: unknown }).statusCode;
+  return typeof status === 'number' ? status : undefined;
+}
+
 type BoondAuthConfig =
   | {
       type: 'x-token';
@@ -183,7 +294,7 @@ export class BoondAPIClient {
 
   constructor(
     authOrToken: BoondAuthConfig | string,
-    baseUrl: string = process.env['BOOND_API_URL'] || 'https://ui.boondmanager.com/api',
+    baseUrl: string = process.env['BOOND_API_URL'] || 'https://ui.boondmanager.com/api/1.0',
     requestTimeout: number = 30000
   ) {
     this.baseUrl = baseUrl;
@@ -258,6 +369,8 @@ export class BoondAPIClient {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'User-Agent': 'boond-mcp/1.0.0 (https://github.com/imarinmed/boond-mcp)',
       ...this.buildAuthHeaders(),
     };
 
@@ -338,6 +451,23 @@ export class BoondAPIClient {
             );
             throw new ServerError(`Server error: HTTP ${response.status}`);
 
+          case 403: {
+            const bodyText = typeof errorData === 'string' ? errorData : JSON.stringify(errorData);
+            const isCloudflare = /cloudflare|attention required|just a moment/i.test(bodyText);
+            const message = isCloudflare
+              ? 'Forbidden by Cloudflare/WAF while reaching Boond API. Verify API host, auth mode, and endpoint permissions.'
+              : 'Forbidden: insufficient permissions for this endpoint';
+
+            throw new ApiError(403, message, isCloudflare ? 'CLOUDFLARE_BLOCK' : 'FORBIDDEN');
+          }
+
+          case 405:
+            throw new ApiError(
+              405,
+              `Method not allowed for endpoint ${endpoint}. Verify Boond API method/path compatibility.`,
+              'METHOD_NOT_ALLOWED'
+            );
+
           default:
             console.error(
               `HTTP ${response.status} error:`,
@@ -374,14 +504,16 @@ export class BoondAPIClient {
       ) {
         const jsonApi = rawData as {
           meta: { totals?: { rows?: number }; [key: string]: unknown };
-          data: Array<{ id: string; type?: string; attributes?: Record<string, unknown>; relationships?: unknown }>;
+          data: Array<{
+            id: string;
+            type?: string;
+            attributes?: Record<string, unknown>;
+            relationships?: unknown;
+          }>;
         };
         const rows = jsonApi.meta?.totals?.rows ?? jsonApi.data.length;
         const transformed = {
-          data: jsonApi.data.map((item) => ({
-            id: item.id,
-            ...(item.attributes ?? {}),
-          })),
+          data: jsonApi.data.map(item => normalizeJsonApiEntity(item)),
           pagination: {
             page: 1,
             limit: jsonApi.data.length || 25,
@@ -402,12 +534,14 @@ export class BoondAPIClient {
       ) {
         const jsonApi = rawData as {
           meta?: Record<string, unknown>;
-          data: { id: string; type?: string; attributes?: Record<string, unknown>; relationships?: unknown };
+          data: {
+            id: string;
+            type?: string;
+            attributes?: Record<string, unknown>;
+            relationships?: unknown;
+          };
         };
-        return {
-          id: jsonApi.data.id,
-          ...(jsonApi.data.attributes ?? {}),
-        } as T;
+        return normalizeJsonApiEntity(jsonApi.data) as T;
       }
 
       return rawData as T;
@@ -697,7 +831,19 @@ export class BoondAPIClient {
       limit: String(Math.min(params.limit, 100)), // Cap at 100
     });
 
-    return this.request<SearchResponse<Contract>>('GET', `/contracts?${query.toString()}`);
+    try {
+      return await this.request<SearchResponse<Contract>>('GET', `/contracts?${query.toString()}`);
+    } catch (error) {
+      const statusCode = getApiStatusCode(error);
+      if (statusCode === 405 || statusCode === 404) {
+        return this.request<SearchResponse<Contract>>('POST', '/contracts/search', {
+          ...(params.query ? { query: params.query } : {}),
+          page: params.page,
+          limit: Math.min(params.limit, 100),
+        });
+      }
+      throw error;
+    }
   }
 
   /**
@@ -860,7 +1006,19 @@ export class BoondAPIClient {
       limit: String(Math.min(params.limit, 100)),
     });
 
-    return this.request<SearchResponse<Delivery>>('GET', `/deliveries?${query.toString()}`);
+    try {
+      return await this.request<SearchResponse<Delivery>>('GET', `/deliveries?${query.toString()}`);
+    } catch (error) {
+      const statusCode = getApiStatusCode(error);
+      if (statusCode === 405 || statusCode === 404) {
+        return this.request<SearchResponse<Delivery>>('POST', '/deliveries/search', {
+          ...(params.query ? { query: params.query } : {}),
+          page: params.page,
+          limit: Math.min(params.limit, 100),
+        });
+      }
+      throw error;
+    }
   }
 
   /**
