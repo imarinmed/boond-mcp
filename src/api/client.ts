@@ -149,19 +149,48 @@ function applyAliases(record: Record<string, unknown>): Record<string, unknown> 
   const aliases: Array<{ target: string; sources: string[] }> = [
     {
       target: 'status',
-      sources: ['state', 'workflowState', 'currentState', 'activity', 'enabled'],
+      sources: [
+        'state',
+        'workflowState',
+        'currentState',
+        'activity',
+        'enabled',
+        'validationStatus',
+        'workflowStatus',
+      ],
     },
     { target: 'email', sources: ['email1', 'email_1', 'mail', 'primaryEmail'] },
     { target: 'firstName', sources: ['firstname', 'givenName'] },
     { target: 'lastName', sources: ['lastname', 'familyName'] },
-    { target: 'name', sources: ['title', 'reference', 'label'] },
+    {
+      target: 'name',
+      sources: ['title', 'reference', 'label', 'projectName', 'projectTitle', 'fullName'],
+    },
     { target: 'companyId', sources: ['clientId', 'customerId', 'accountId'] },
     { target: 'projectId', sources: ['missionId', 'assignmentId'] },
     { target: 'resourceId', sources: ['dependsOnId', 'consultantId'] },
     { target: 'total', sources: ['amount', 'amountTotal', 'totalAmount', 'sum'] },
-    { target: 'dailyRate', sources: ['rate', 'tjm', 'dailySellRate'] },
+    {
+      target: 'dailyRate',
+      sources: [
+        'rate',
+        'tjm',
+        'dailySellRate',
+        'salesDailyRate',
+        'saleDailyRate',
+        'averageDailyRate',
+      ],
+    },
     { target: 'hourlyRate', sources: ['hourRate'] },
-    { target: 'salaryAnnual', sources: ['annualSalary', 'yearlySalary', 'salary'] },
+    {
+      target: 'salaryAnnual',
+      sources: ['annualSalary', 'yearlySalary', 'salary', 'grossAnnualSalary'],
+    },
+    {
+      target: 'hours',
+      sources: ['duration', 'workedHours', 'quantity', 'time', 'nbHours', 'numberOfHours'],
+    },
+    { target: 'date', sources: ['workDate', 'day', 'workedOn', 'reportedAt', 'startsAt'] },
   ];
 
   for (const alias of aliases) {
