@@ -61,13 +61,45 @@ function normalizeTimeReport(report: TimeReport): {
   updatedAt?: string;
 } {
   const record = report as unknown as Record<string, unknown>;
+  const regularTimesRaw = record['regularTimes'];
+  const regularTimes = Array.isArray(regularTimesRaw)
+    ? (regularTimesRaw.filter(item => item && typeof item === 'object') as Array<
+        Record<string, unknown>
+      >)
+    : [];
+
+  const firstRegularTime = regularTimes[0];
+  const regularDate =
+    firstRegularTime && typeof firstRegularTime['startDate'] === 'string'
+      ? firstRegularTime['startDate']
+      : undefined;
+
+  const regularProjectId =
+    firstRegularTime &&
+    typeof firstRegularTime['project'] === 'object' &&
+    firstRegularTime['project'] !== null
+      ? (firstRegularTime['project'] as Record<string, unknown>)['id']
+      : undefined;
+
+  const regularHours = regularTimes
+    .map(item => item['duration'])
+    .reduce<number | undefined>((acc, value) => {
+      const next =
+        typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+      if (Number.isNaN(next)) {
+        return acc;
+      }
+      return (acc ?? 0) + next;
+    }, undefined);
 
   const dateRaw = firstDefined(
     report.date,
-    readString(record, ['workDate', 'day', 'workedOn', 'reportedAt', 'startsAt', 'date'])
+    regularDate,
+    readString(record, ['workDate', 'day', 'workedOn', 'reportedAt', 'startsAt', 'date', 'term'])
   );
   const hours = firstDefined(
     report.hours,
+    regularHours,
     readNumber(record, ['duration', 'workedHours', 'quantity', 'time', 'nbHours', 'numberOfHours'])
   );
 
@@ -84,6 +116,9 @@ function normalizeTimeReport(report: TimeReport): {
     projectId: String(
       firstDefined(
         report.projectId,
+        typeof regularProjectId === 'number' || typeof regularProjectId === 'string'
+          ? String(regularProjectId)
+          : undefined,
         readString(record, ['projectId', 'missionId', 'assignmentId'])
       ) ?? 'Unknown'
     ),

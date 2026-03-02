@@ -14,6 +14,9 @@ function pickProjectStatus(project: Project): string {
     if (typeof value === 'string' && value.trim().length > 0) {
       return value;
     }
+    if (typeof value === 'number') {
+      return String(value);
+    }
     if (typeof value === 'boolean') {
       return value ? 'active' : 'inactive';
     }

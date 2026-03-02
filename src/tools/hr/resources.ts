@@ -31,6 +31,11 @@ function pickStatus(resource: Resource): string {
     return status;
   }
 
+  const stateNumber = record['state'];
+  if (typeof stateNumber === 'number') {
+    return String(stateNumber);
+  }
+
   const isActive = record['isActive'];
   if (typeof isActive === 'boolean') {
     return isActive ? 'active' : 'inactive';
