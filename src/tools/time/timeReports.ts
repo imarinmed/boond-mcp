@@ -240,6 +240,7 @@ export function registerTimeReportTools(server: McpServer, client: BoondAPIClien
         const validated = searchTimeReportsSchema.parse(params);
         const result = await client.searchTimeReports(validated);
         result.data = await enrichTimeReportsWithDetails(client, result.data);
+        result.data = result.data.slice(0, validated.limit);
         const text = formatTimeReportList(result);
 
         return {

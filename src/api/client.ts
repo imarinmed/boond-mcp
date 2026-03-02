@@ -881,19 +881,31 @@ export class BoondAPIClient {
       return resource;
     }
 
-    try {
-      const info = await this.request<Record<string, unknown>>(
-        'GET',
-        `/resources-information/${encodeURIComponent(id)}`
-      );
+    const fallbackEndpoints = [
+      `/resources-information/${encodeURIComponent(id)}`,
+      `/resourcesInformation/${encodeURIComponent(id)}`,
+      `/resources/${encodeURIComponent(id)}/information`,
+      `/resources/${encodeURIComponent(id)}/profile`,
+    ];
 
-      return {
-        ...resource,
-        ...info,
-      } as Resource;
-    } catch {
-      return resource;
+    let merged = resource as unknown as Record<string, unknown>;
+
+    for (const endpoint of fallbackEndpoints) {
+      try {
+        const info = await this.request<Record<string, unknown>>('GET', endpoint);
+        merged = {
+          ...merged,
+          ...info,
+        };
+        if (merged['email'] || merged['email1'] || merged['status'] || merged['state']) {
+          break;
+        }
+      } catch {
+        continue;
+      }
     }
+
+    return merged as unknown as Resource;
   }
 
   /**

@@ -146,6 +146,7 @@ export function registerDeliveryTools(server: McpServer, client: BoondAPIClient)
         const params = searchDeliveriesSchema.parse(input);
         const result = await client.searchDeliveries(params);
         result.data = await enrichDeliveriesWithDetails(client, result.data);
+        result.data = result.data.slice(0, params.limit);
         return {
           content: [
             {
