@@ -54,6 +54,45 @@ function resolveDeliveryStatus(delivery: Delivery): string {
   return 'unknown';
 }
 
+async function enrichDeliveriesWithDetails(
+  client: BoondAPIClient,
+  deliveries: Delivery[],
+  maxLookups: number = 10
+): Promise<Delivery[]> {
+  const candidates = deliveries
+    .map((delivery, index) => ({ delivery, index }))
+    .filter(({ delivery }) => {
+      const missingStatus = resolveDeliveryStatus(delivery) === 'unknown';
+      const missingName = resolveDeliveryName(delivery).startsWith('Delivery #');
+      return missingStatus || missingName;
+    })
+    .slice(0, maxLookups);
+
+  if (candidates.length === 0) {
+    return deliveries;
+  }
+
+  const enriched = [...deliveries];
+  const results = await Promise.allSettled(
+    candidates.map(({ delivery }) => client.getDelivery(delivery.id))
+  );
+
+  for (let i = 0; i < results.length; i += 1) {
+    const result = results[i];
+    const candidate = candidates[i];
+    if (!candidate || !result || result.status !== 'fulfilled') {
+      continue;
+    }
+
+    enriched[candidate.index] = {
+      ...candidate.delivery,
+      ...result.value,
+    };
+  }
+
+  return enriched;
+}
+
 function formatDeliveryList(result: SearchResponse<Delivery>): string {
   if (result.data.length === 0) {
     return 'No deliveries found.';
@@ -106,6 +145,7 @@ export function registerDeliveryTools(server: McpServer, client: BoondAPIClient)
       try {
         const params = searchDeliveriesSchema.parse(input);
         const result = await client.searchDeliveries(params);
+        result.data = await enrichDeliveriesWithDetails(client, result.data);
         return {
           content: [
             {

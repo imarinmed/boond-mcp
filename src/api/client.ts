@@ -869,7 +869,31 @@ export class BoondAPIClient {
    * Get resource by ID
    */
   async getResource(id: string): Promise<Resource> {
-    return this.request<Resource>('GET', `/resources/${encodeURIComponent(id)}`);
+    const resource = await this.request<Resource>('GET', `/resources/${encodeURIComponent(id)}`);
+
+    const resourceRecord = resource as unknown as Record<string, unknown>;
+    const hasEmail =
+      typeof resourceRecord['email'] === 'string' || typeof resourceRecord['email1'] === 'string';
+    const hasStatus =
+      resourceRecord['status'] !== undefined || resourceRecord['state'] !== undefined;
+
+    if (hasEmail && hasStatus) {
+      return resource;
+    }
+
+    try {
+      const info = await this.request<Record<string, unknown>>(
+        'GET',
+        `/resources-information/${encodeURIComponent(id)}`
+      );
+
+      return {
+        ...resource,
+        ...info,
+      } as Resource;
+    } catch {
+      return resource;
+    }
   }
 
   /**

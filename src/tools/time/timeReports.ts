@@ -134,6 +134,50 @@ function normalizeTimeReport(report: TimeReport): {
   };
 }
 
+function hasMissingKeyMetrics(report: TimeReport): boolean {
+  const normalized = normalizeTimeReport(report);
+  return (
+    normalized.date === 'Unknown' ||
+    normalized.hours === 'Unknown' ||
+    normalized.projectId === 'Unknown'
+  );
+}
+
+async function enrichTimeReportsWithDetails(
+  client: BoondAPIClient,
+  reports: TimeReport[],
+  maxLookups: number = 10
+): Promise<TimeReport[]> {
+  const candidates = reports
+    .map((report, index) => ({ report, index }))
+    .filter(({ report }) => hasMissingKeyMetrics(report))
+    .slice(0, maxLookups);
+
+  if (candidates.length === 0) {
+    return reports;
+  }
+
+  const enriched = [...reports];
+  const results = await Promise.allSettled(
+    candidates.map(({ report }) => client.getTimeReport(report.id))
+  );
+
+  for (let i = 0; i < results.length; i += 1) {
+    const result = results[i];
+    const candidate = candidates[i];
+    if (!candidate || !result || result.status !== 'fulfilled') {
+      continue;
+    }
+
+    enriched[candidate.index] = {
+      ...candidate.report,
+      ...result.value,
+    };
+  }
+
+  return enriched;
+}
+
 function formatTimeReportList(result: SearchResponse<TimeReport>): string {
   if (!result.data || result.data.length === 0) {
     return 'No time reports found.';
@@ -195,6 +239,7 @@ export function registerTimeReportTools(server: McpServer, client: BoondAPIClien
       try {
         const validated = searchTimeReportsSchema.parse(params);
         const result = await client.searchTimeReports(validated);
+        result.data = await enrichTimeReportsWithDetails(client, result.data);
         const text = formatTimeReportList(result);
 
         return {
