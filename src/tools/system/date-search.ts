@@ -101,6 +101,11 @@ function normalizeTimeReportLine(report: Record<string, unknown>): {
   };
 }
 
+function isTimeReportIncomplete(report: Record<string, unknown>): boolean {
+  const normalized = normalizeTimeReportLine(report);
+  return normalized.hours === 'unknown' || normalized.projectId === 'unknown';
+}
+
 const dateRangeSearchSchema = z.object({
   entity: z.enum(['timereports', 'absences', 'projects']),
   dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
@@ -137,8 +142,33 @@ export function registerDateRangeSearchTool(server: McpServer, client: BoondAPIC
               page,
               limit,
             });
+
+            const enriched = [...results.data];
+            const candidates = results.data
+              .map((tr, index) => ({ tr, index }))
+              .filter(({ tr }) => isTimeReportIncomplete(tr as unknown as Record<string, unknown>))
+              .slice(0, 10);
+
+            const detailResults = await Promise.allSettled(
+              candidates.map(({ tr }) =>
+                client.getTimeReport(String((tr as unknown as Record<string, unknown>)['id']))
+              )
+            );
+
+            for (let i = 0; i < detailResults.length; i += 1) {
+              const result = detailResults[i];
+              const candidate = candidates[i];
+              if (!candidate || !result || result.status !== 'fulfilled') {
+                continue;
+              }
+              enriched[candidate.index] = {
+                ...(candidate.tr as unknown as Record<string, unknown>),
+                ...(result.value as unknown as Record<string, unknown>),
+              } as unknown as (typeof results.data)[number];
+            }
+
             lines.push(`Found ${results.data.length} time reports`);
-            for (const tr of results.data) {
+            for (const tr of enriched) {
               const normalized = normalizeTimeReportLine(tr as unknown as Record<string, unknown>);
               lines.push(`  • ${normalized.date} - ${normalized.hours}h (${normalized.status})`);
               lines.push(

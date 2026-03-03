@@ -1430,8 +1430,22 @@ export class BoondAPIClient {
    * Search expense reports
    */
   async searchExpenseReports(params: SearchParams): Promise<SearchResponse<ExpenseReport>> {
+    const expenseParams = params as SearchParams & { startDate?: string; endDate?: string };
+    const today = new Date();
+    const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1))
+      .toISOString()
+      .slice(0, 10);
+    const monthEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0))
+      .toISOString()
+      .slice(0, 10);
+
+    const startDate = expenseParams.startDate || monthStart;
+    const endDate = expenseParams.endDate || monthEnd;
+
     const query = new URLSearchParams({
       ...(params.query && { query: params.query }),
+      startDate,
+      endDate,
       page: String(params.page),
       limit: String(Math.min(params.limit, 100)),
     });
