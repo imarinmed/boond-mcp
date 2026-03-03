@@ -12,55 +12,20 @@ import {
 } from '../../types/schemas.js';
 import type { Order, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { enrichItemsWithDetails } from '../../utils/enrichment.js';
+import { pickCompanyId, pickStatus, pickTotal } from '../../utils/normalization.js';
 
-function pickOrderStatus(order: Order): string {
-  const record = order as unknown as Record<string, unknown>;
-  const candidates = [
-    order.status,
-    record['state'],
-    record['workflowStatus'],
-    record['validationStatus'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-    if (typeof value === 'number') return String(value);
-  }
-  return 'unknown';
+function toOrderRecord(order: Order): Record<string, unknown> {
+  return order as unknown as Record<string, unknown>;
 }
 
-function pickOrderCompany(order: Order): string {
-  const record = order as unknown as Record<string, unknown>;
-  const candidates = [
-    order.companyId,
-    record['companyId'],
-    record['clientId'],
-    record['accountId'],
-    record['dependsOnId'],
-    record['customerId'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-    if (typeof value === 'number') return String(value);
-  }
-  return 'unknown';
-}
-
-function pickOrderTotal(order: Order): string {
-  const record = order as unknown as Record<string, unknown>;
-  const candidates = [
-    order.total,
-    record['amount'],
-    record['totalAmount'],
-    record['sum'],
-    record['amountWithoutTaxes'],
-    record['amountExcludingTax'],
-    record['netAmount'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'number') return String(value);
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-  }
-  return 'unknown';
+function shouldEnrichOrder(order: Order): boolean {
+  const record = toOrderRecord(order);
+  return (
+    pickStatus(record) === 'unknown' ||
+    pickCompanyId(record) === 'unknown' ||
+    pickTotal(record) === 'unknown'
+  );
 }
 
 /**
@@ -73,10 +38,11 @@ function formatOrderList(result: SearchResponse<Order>): string {
 
   const orders = result.data.map(order => {
     const lines: string[] = [];
-    lines.push(`📦 Order #${order.id} (Status: ${pickOrderStatus(order)})`);
-    lines.push(`   Company: ${pickOrderCompany(order)}`);
+    const record = toOrderRecord(order);
+    lines.push(`📦 Order #${order.id} (Status: ${pickStatus(record)})`);
+    lines.push(`   Company: ${pickCompanyId(record)}`);
     if (order.projectId) lines.push(`   Project: ${order.projectId}`);
-    lines.push(`   Total: ${pickOrderTotal(order)}`);
+    lines.push(`   Total: ${pickTotal(record)}`);
     return lines.join('\n');
   });
 
@@ -90,11 +56,12 @@ function formatOrderList(result: SearchResponse<Order>): string {
  */
 function formatOrder(order: Order): string {
   const lines: string[] = [];
+  const record = toOrderRecord(order);
   lines.push(`📦 Order: ${order.id}`);
-  lines.push(`Status: ${pickOrderStatus(order)}`);
-  lines.push(`Company: ${pickOrderCompany(order)}`);
+  lines.push(`Status: ${pickStatus(record)}`);
+  lines.push(`Company: ${pickCompanyId(record)}`);
   if (order.projectId) lines.push(`Project: ${order.projectId}`);
-  lines.push(`Total: ${pickOrderTotal(order)}`);
+  lines.push(`Total: ${pickTotal(record)}`);
   if (order.createdAt) lines.push(`Created: ${order.createdAt}`);
   if (order.updatedAt) lines.push(`Updated: ${order.updatedAt}`);
 
@@ -115,6 +82,13 @@ export function registerOrderTools(server: McpServer, client: BoondAPIClient): v
       try {
         const validated = searchParamsSchema.parse(params);
         const result = await client.searchOrders(validated);
+        result.data = await enrichItemsWithDetails(
+          result.data,
+          order => client.getOrder(order.id),
+          shouldEnrichOrder,
+          10
+        );
+        result.data = result.data.slice(0, validated.limit);
         const text = formatOrderList(result);
 
         return {

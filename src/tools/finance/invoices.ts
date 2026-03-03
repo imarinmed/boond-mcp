@@ -12,55 +12,20 @@ import {
 } from '../../types/schemas.js';
 import type { Invoice, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { enrichItemsWithDetails } from '../../utils/enrichment.js';
+import { pickCompanyId, pickStatus, pickTotal } from '../../utils/normalization.js';
 
-function pickInvoiceStatus(invoice: Invoice): string {
-  const record = invoice as unknown as Record<string, unknown>;
-  const candidates = [
-    invoice.status,
-    record['state'],
-    record['workflowStatus'],
-    record['validationStatus'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-    if (typeof value === 'number') return String(value);
-  }
-  return 'unknown';
+function toInvoiceRecord(invoice: Invoice): Record<string, unknown> {
+  return invoice as unknown as Record<string, unknown>;
 }
 
-function pickInvoiceCompany(invoice: Invoice): string {
-  const record = invoice as unknown as Record<string, unknown>;
-  const candidates = [
-    invoice.companyId,
-    record['companyId'],
-    record['clientId'],
-    record['accountId'],
-    record['dependsOnId'],
-    record['customerId'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-    if (typeof value === 'number') return String(value);
-  }
-  return 'unknown';
-}
-
-function pickInvoiceTotal(invoice: Invoice): string {
-  const record = invoice as unknown as Record<string, unknown>;
-  const candidates = [
-    invoice.total,
-    record['amount'],
-    record['totalAmount'],
-    record['sum'],
-    record['amountWithoutTaxes'],
-    record['amountExcludingTax'],
-    record['netAmount'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'number') return String(value);
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-  }
-  return 'unknown';
+function shouldEnrichInvoice(invoice: Invoice): boolean {
+  const record = toInvoiceRecord(invoice);
+  return (
+    pickStatus(record) === 'unknown' ||
+    pickCompanyId(record) === 'unknown' ||
+    pickTotal(record) === 'unknown'
+  );
 }
 
 /**
@@ -73,9 +38,10 @@ function formatInvoiceList(result: SearchResponse<Invoice>): string {
 
   const invoices = result.data.map(invoice => {
     const lines: string[] = [];
-    lines.push(`💰 Invoice #${invoice.id} (Status: ${pickInvoiceStatus(invoice)})`);
-    lines.push(`   Company: ${pickInvoiceCompany(invoice)}`);
-    lines.push(`   Total: ${pickInvoiceTotal(invoice)}`);
+    const record = toInvoiceRecord(invoice);
+    lines.push(`💰 Invoice #${invoice.id} (Status: ${pickStatus(record)})`);
+    lines.push(`   Company: ${pickCompanyId(record)}`);
+    lines.push(`   Total: ${pickTotal(record)}`);
     if (invoice.issuedAt) lines.push(`   Issued: ${invoice.issuedAt}`);
     if (invoice.dueDate) lines.push(`   Due Date: ${invoice.dueDate}`);
     if (invoice.paidAt) lines.push(`   Paid: ${invoice.paidAt}`);
@@ -93,10 +59,11 @@ function formatInvoiceList(result: SearchResponse<Invoice>): string {
  */
 function formatInvoice(invoice: Invoice): string {
   const lines: string[] = [];
+  const record = toInvoiceRecord(invoice);
   lines.push(`💰 Invoice: ${invoice.id}`);
-  lines.push(`Status: ${pickInvoiceStatus(invoice)}`);
-  lines.push(`Company: ${pickInvoiceCompany(invoice)}`);
-  lines.push(`Total: ${pickInvoiceTotal(invoice)}`);
+  lines.push(`Status: ${pickStatus(record)}`);
+  lines.push(`Company: ${pickCompanyId(record)}`);
+  lines.push(`Total: ${pickTotal(record)}`);
   if (invoice.issuedAt) lines.push(`Issued: ${invoice.issuedAt}`);
   if (invoice.dueDate) lines.push(`Due Date: ${invoice.dueDate}`);
   if (invoice.paidAt) lines.push(`Paid: ${invoice.paidAt}`);
@@ -129,6 +96,13 @@ export function registerInvoiceTools(server: McpServer, client: BoondAPIClient):
       try {
         const validated = searchParamsSchema.parse(params);
         const result = await client.searchInvoices(validated);
+        result.data = await enrichItemsWithDetails(
+          result.data,
+          invoice => client.getInvoice(invoice.id),
+          shouldEnrichInvoice,
+          10
+        );
+        result.data = result.data.slice(0, validated.limit);
         const text = formatInvoiceList(result);
 
         return {

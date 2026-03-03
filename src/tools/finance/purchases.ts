@@ -12,55 +12,20 @@ import {
 } from '../../types/schemas.js';
 import type { Purchase, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { enrichItemsWithDetails } from '../../utils/enrichment.js';
+import { pickCompanyId, pickStatus, pickTotal } from '../../utils/normalization.js';
 
-function pickPurchaseStatus(purchase: Purchase): string {
-  const record = purchase as unknown as Record<string, unknown>;
-  const candidates = [
-    purchase.status,
-    record['state'],
-    record['workflowStatus'],
-    record['validationStatus'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-    if (typeof value === 'number') return String(value);
-  }
-  return 'unknown';
+function toPurchaseRecord(purchase: Purchase): Record<string, unknown> {
+  return purchase as unknown as Record<string, unknown>;
 }
 
-function pickPurchaseCompany(purchase: Purchase): string {
-  const record = purchase as unknown as Record<string, unknown>;
-  const candidates = [
-    purchase.companyId,
-    record['companyId'],
-    record['clientId'],
-    record['accountId'],
-    record['dependsOnId'],
-    record['customerId'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-    if (typeof value === 'number') return String(value);
-  }
-  return 'unknown';
-}
-
-function pickPurchaseTotal(purchase: Purchase): string {
-  const record = purchase as unknown as Record<string, unknown>;
-  const candidates = [
-    purchase.total,
-    record['amount'],
-    record['totalAmount'],
-    record['sum'],
-    record['amountWithoutTaxes'],
-    record['amountExcludingTax'],
-    record['netAmount'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'number') return String(value);
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-  }
-  return 'unknown';
+function shouldEnrichPurchase(purchase: Purchase): boolean {
+  const record = toPurchaseRecord(purchase);
+  return (
+    pickStatus(record) === 'unknown' ||
+    pickCompanyId(record) === 'unknown' ||
+    pickTotal(record) === 'unknown'
+  );
 }
 
 /**
@@ -73,9 +38,10 @@ function formatPurchaseList(result: SearchResponse<Purchase>): string {
 
   const purchases = result.data.map(purchase => {
     const lines: string[] = [];
-    lines.push(`📦 Purchase #${purchase.id} (Status: ${pickPurchaseStatus(purchase)})`);
-    lines.push(`   Company: ${pickPurchaseCompany(purchase)}`);
-    lines.push(`   Total: ${pickPurchaseTotal(purchase)}`);
+    const record = toPurchaseRecord(purchase);
+    lines.push(`📦 Purchase #${purchase.id} (Status: ${pickStatus(record)})`);
+    lines.push(`   Company: ${pickCompanyId(record)}`);
+    lines.push(`   Total: ${pickTotal(record)}`);
     if (purchase.orderedAt) lines.push(`   Ordered: ${purchase.orderedAt}`);
     if (purchase.receivedAt) lines.push(`   Received: ${purchase.receivedAt}`);
     return lines.join('\n');
@@ -91,10 +57,11 @@ function formatPurchaseList(result: SearchResponse<Purchase>): string {
  */
 function formatPurchase(purchase: Purchase): string {
   const lines: string[] = [];
+  const record = toPurchaseRecord(purchase);
   lines.push(`📦 Purchase: ${purchase.id}`);
-  lines.push(`Status: ${pickPurchaseStatus(purchase)}`);
-  lines.push(`Company: ${pickPurchaseCompany(purchase)}`);
-  lines.push(`Total: ${pickPurchaseTotal(purchase)}`);
+  lines.push(`Status: ${pickStatus(record)}`);
+  lines.push(`Company: ${pickCompanyId(record)}`);
+  lines.push(`Total: ${pickTotal(record)}`);
   if (purchase.orderedAt) lines.push(`Ordered: ${purchase.orderedAt}`);
   if (purchase.receivedAt) lines.push(`Received: ${purchase.receivedAt}`);
   if (purchase.items && purchase.items.length > 0) {
@@ -125,6 +92,13 @@ export function registerPurchaseTools(server: McpServer, client: BoondAPIClient)
       try {
         const validated = searchParamsSchema.parse(params);
         const result = await client.searchPurchases(validated);
+        result.data = await enrichItemsWithDetails(
+          result.data,
+          purchase => client.getPurchase(purchase.id),
+          shouldEnrichPurchase,
+          10
+        );
+        result.data = result.data.slice(0, validated.limit);
         const text = formatPurchaseList(result);
 
         return {

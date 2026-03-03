@@ -8,16 +8,18 @@ import {
 } from '../../types/schemas.js';
 import type { Absence, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { enrichItemsWithDetails } from '../../utils/enrichment.js';
+import {
+  readString,
+  pickStatus,
+  pickType,
+  pickDate,
+  pickResourceId,
+  normalizeAbsence,
+  isFieldUnknown,
+} from '../../utils/normalization.js';
 
-function readString(record: Record<string, unknown>, keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = record[key];
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-  }
-  return undefined;
-}
-
-function normalizeAbsence(absence: Absence): {
+type DisplayAbsence = {
   id: string;
   resourceId: string;
   type: string;
@@ -27,33 +29,23 @@ function normalizeAbsence(absence: Absence): {
   reason?: string;
   createdAt?: string;
   updatedAt?: string;
-} {
-  const record = absence as unknown as Record<string, unknown>;
-  const startDate =
-    readString(record, ['startDate', 'startsAt', 'fromDate', 'from']) || absence.startDate;
-  const endDate = readString(record, ['endDate', 'endsAt', 'toDate', 'to']) || absence.endDate;
-  const resourceId =
-    readString(record, ['resourceId', 'consultantId', 'dependsOnId']) ||
-    String(absence.resourceId || 'unknown');
-  const type =
-    readString(record, ['type', 'absenceType', 'category']) || String(absence.type || 'unknown');
+};
 
-  let status =
-    readString(record, ['status', 'state', 'workflowStatus', 'validationStatus']) ||
-    String(absence.status || 'unknown');
-  const rawState = record['state'];
-  if ((status === 'unknown' || status === 'undefined') && typeof rawState === 'number') {
-    status = String(rawState);
-  }
+function normalizeAbsenceForDisplay(absence: Absence): DisplayAbsence {
+  const normalized = normalizeAbsence(absence);
+  const normalizedFields = normalized._normalized;
+  const record = absence as unknown as Record<string, unknown>;
+  const reason = readString(record, ['reason']) || absence.reason;
 
   return {
     id: absence.id,
-    resourceId,
-    type,
-    startDate,
-    endDate,
-    status,
-    ...(absence.reason ? { reason: absence.reason } : {}),
+    resourceId: normalizedFields.resourceId ?? pickResourceId(record),
+    type: normalizedFields.type ?? pickType(record),
+    startDate:
+      normalizedFields.startDate ?? pickDate(record, ['startDate', 'startsAt', 'fromDate', 'from']),
+    endDate: normalizedFields.endDate ?? pickDate(record, ['endDate', 'endsAt', 'toDate', 'to']),
+    status: normalizedFields.status ?? pickStatus(record),
+    ...(reason ? { reason } : {}),
     ...(absence.createdAt ? { createdAt: absence.createdAt } : {}),
     ...(absence.updatedAt ? { updatedAt: absence.updatedAt } : {}),
   };
@@ -65,7 +57,7 @@ function formatAbsenceList(result: SearchResponse<Absence>): string {
   }
 
   const absences = result.data.map(absence => {
-    const normalized = normalizeAbsence(absence);
+    const normalized = normalizeAbsenceForDisplay(absence);
     const startDate = new Date(normalized.startDate).toLocaleDateString();
     const endDate = new Date(normalized.endDate).toLocaleDateString();
     return `  • ID: ${absence.id}
@@ -89,7 +81,7 @@ function formatAbsenceList(result: SearchResponse<Absence>): string {
 }
 
 function formatAbsence(absence: Absence): string {
-  const normalized = normalizeAbsence(absence);
+  const normalized = normalizeAbsenceForDisplay(absence);
   const startDate = new Date(normalized.startDate).toLocaleDateString();
   const endDate = new Date(normalized.endDate).toLocaleDateString();
   const created = normalized.createdAt
@@ -124,6 +116,16 @@ export function registerAbsenceTools(server: McpServer, client: BoondAPIClient):
       try {
         const validated = searchAbsencesSchema.parse(params);
         const result = await client.searchAbsences(validated);
+        result.data = await enrichItemsWithDetails(
+          result.data,
+          absence => client.getAbsence(String(absence.id)),
+          absence => {
+            const normalized = normalizeAbsence(absence)._normalized;
+            return isFieldUnknown(normalized.status) || isFieldUnknown(normalized.type);
+          },
+          10
+        );
+        result.data = result.data.slice(0, validated.limit);
         const text = formatAbsenceList(result);
 
         return {

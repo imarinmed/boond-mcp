@@ -9,31 +9,8 @@ import {
 } from '../../types/schemas.js';
 import type { Action, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
-
-function pickActionName(action: Action): string {
-  const record = action as unknown as Record<string, unknown>;
-  const candidates = [action.name, record['title'], record['subject'], record['label']];
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-  }
-  return `Action #${action.id}`;
-}
-
-function pickActionStatus(action: Action): string {
-  const record = action as unknown as Record<string, unknown>;
-  const candidates = [
-    action.status,
-    record['state'],
-    record['workflowStatus'],
-    record['validationStatus'],
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-    if (typeof value === 'number') return String(value);
-    if (typeof value === 'boolean') return value ? 'active' : 'inactive';
-  }
-  return 'unknown';
-}
+import { enrichItemsWithDetails } from '../../utils/enrichment.js';
+import { normalizeAction, pickName, pickStatus } from '../../utils/normalization.js';
 
 function formatActionList(result: SearchResponse<Action>): string {
   if (result.data.length === 0) {
@@ -41,9 +18,10 @@ function formatActionList(result: SearchResponse<Action>): string {
   }
 
   const actions = result.data.map(action => {
+    const normalized = normalizeAction(action)._normalized;
     const lines: string[] = [];
-    lines.push(`✓ ${pickActionName(action)} (ID: ${action.id})`);
-    lines.push(`   Status: ${pickActionStatus(action)}`);
+    lines.push(`✓ ${normalized.name ?? `Action #${action.id}`} (ID: ${action.id})`);
+    lines.push(`   Status: ${normalized.status ?? 'unknown'}`);
     if (action.projectId) lines.push(`   Project ID: ${action.projectId}`);
     if (action.assignedTo) lines.push(`   Assigned To: ${action.assignedTo}`);
     if (action.priority) lines.push(`   Priority: ${action.priority}`);
@@ -58,10 +36,11 @@ function formatActionList(result: SearchResponse<Action>): string {
 }
 
 function formatAction(action: Action): string {
+  const normalized = normalizeAction(action)._normalized;
   const lines: string[] = [];
-  lines.push(`✓ Action: ${pickActionName(action)}`);
+  lines.push(`✓ Action: ${normalized.name ?? `Action #${action.id}`}`);
   lines.push(`ID: ${action.id}`);
-  lines.push(`Status: ${pickActionStatus(action)}`);
+  lines.push(`Status: ${normalized.status ?? 'unknown'}`);
   if (action.projectId) lines.push(`Project ID: ${action.projectId}`);
   if (action.assignedTo) lines.push(`Assigned To: ${action.assignedTo}`);
   if (action.priority) lines.push(`Priority: ${action.priority}`);
@@ -94,6 +73,17 @@ export function registerActionTools(server: McpServer, client: BoondAPIClient): 
       try {
         const params = searchActionsSchema.parse(input);
         const result = await client.searchActions(params);
+        result.data = await enrichItemsWithDetails(
+          result.data,
+          action => client.getAction(String(action.id)),
+          action => {
+            const record = action as unknown as Record<string, unknown>;
+            const missingName = pickName(record).length === 0;
+            const missingStatus = pickStatus(record) === 'unknown';
+            return missingName || missingStatus;
+          },
+          10
+        );
         return {
           content: [
             {

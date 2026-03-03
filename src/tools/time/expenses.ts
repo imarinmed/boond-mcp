@@ -9,26 +9,8 @@ import {
 } from '../../types/schemas.js';
 import type { ExpenseReport, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
-
-function readString(record: Record<string, unknown>, keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = record[key];
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-  }
-  return undefined;
-}
-
-function readNumber(record: Record<string, unknown>, keys: string[]): number | undefined {
-  for (const key of keys) {
-    const value = record[key];
-    if (typeof value === 'number' && Number.isFinite(value)) return value;
-    if (typeof value === 'string' && value.trim().length > 0) {
-      const parsed = Number(value);
-      if (!Number.isNaN(parsed)) return parsed;
-    }
-  }
-  return undefined;
-}
+import { enrichItemsWithDetails } from '../../utils/enrichment.js';
+import { readNumber, readString, formatUnknownWithDebug } from '../../utils/normalization.js';
 
 function formatDate(value: string | undefined): string {
   if (!value) return 'Unknown';
@@ -68,15 +50,24 @@ function normalizeExpenseReport(report: ExpenseReport): {
     'sum',
     'amountWithoutTaxes',
   ]);
+  const statusCandidates = ['status', 'state', 'workflowStatus', 'validationStatus'];
   const status =
-    readString(record, ['status', 'state', 'workflowStatus', 'validationStatus']) ||
-    (typeof record['state'] === 'number' ? String(record['state']) : 'unknown');
+    readString(record, statusCandidates) ||
+    (typeof record['state'] === 'number'
+      ? String(record['state'])
+      : formatUnknownWithDebug(
+          'status',
+          statusCandidates.map(k => record[k])
+        ));
+
+  const resourceIdValue = record['resourceId'] ?? record['consultantId'] ?? report.resourceId;
+  const resourceId = String(
+    resourceIdValue || formatUnknownWithDebug('resourceId', [resourceIdValue])
+  );
 
   return {
     id: report.id,
-    resourceId: String(
-      record['resourceId'] ?? record['consultantId'] ?? report.resourceId ?? 'unknown'
-    ),
+    resourceId,
     periodStart: periodStart || 'Unknown',
     periodEnd: periodEnd || 'Unknown',
     total: totalNum !== undefined ? String(totalNum) : String(report.total ?? 'unknown'),
@@ -85,6 +76,17 @@ function normalizeExpenseReport(report: ExpenseReport): {
     ...(report.updatedAt ? { updatedAt: report.updatedAt } : {}),
     ...(report.items ? { items: report.items } : {}),
   };
+}
+
+function shouldEnrichExpenseReport(report: ExpenseReport): boolean {
+  const normalized = normalizeExpenseReport(report);
+  return (
+    normalized.resourceId === 'unknown' ||
+    normalized.periodStart === 'Unknown' ||
+    normalized.periodEnd === 'Unknown' ||
+    normalized.total === 'unknown' ||
+    normalized.status === 'unknown'
+  );
 }
 
 function formatExpenseReportList(result: SearchResponse<ExpenseReport>): string {
@@ -129,9 +131,7 @@ function formatExpenseReport(report: ExpenseReport): string {
   if (normalized.items && normalized.items.length > 0) {
     itemsText = `\n  Items:\n`;
     normalized.items.forEach(item => {
-      itemsText += `    - ${item.description}: ${item.amount} (${
-        item.category || 'uncategorized'
-      })\n`;
+      itemsText += `    - ${item.description}: ${item.amount} (${item.category || 'uncategorized'})\n`;
     });
   }
 
@@ -159,6 +159,13 @@ export function registerExpenseTools(server: McpServer, client: BoondAPIClient):
       try {
         const validated = searchExpenseReportsSchema.parse(params);
         const result = await client.searchExpenseReports(validated);
+        result.data = await enrichItemsWithDetails(
+          result.data,
+          report => client.getExpenseReport(report.id),
+          shouldEnrichExpenseReport,
+          10
+        );
+        result.data = result.data.slice(0, validated.limit);
         const text = formatExpenseReportList(result);
 
         return {
