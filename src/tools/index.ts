@@ -51,4 +51,5 @@ export {
   registerFacetedSearchTool,
   registerDateRangeSearchTool,
   registerAdvancedSearchTool,
+  registerCapabilitiesProbeTool,
 } from './system/index.js';

@@ -5,3 +5,4 @@ export { registerFullTextSearchTool } from './search.js';
 export { registerFacetedSearchTool } from './faceted-search.js';
 export { registerDateRangeSearchTool } from './date-search.js';
 export { registerAdvancedSearchTool } from './advanced-search.js';
+export { registerCapabilitiesProbeTool } from './capabilities-probe.js';

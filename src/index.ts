@@ -62,6 +62,7 @@ import {
   registerFacetedSearchTool,
   registerDateRangeSearchTool,
   registerAdvancedSearchTool,
+  registerCapabilitiesProbeTool,
 } from './tools/index.js';
 
 /**
@@ -178,6 +179,7 @@ async function main(): Promise<void> {
     registerFacetedSearchTool(server, apiClient);
     registerDateRangeSearchTool(server, apiClient);
     registerAdvancedSearchTool(server, apiClient);
+    registerCapabilitiesProbeTool(server, apiClient);
 
     // Choose transport based on TRANSPORT_TYPE environment variable
     const transportType = process.env['TRANSPORT_TYPE'] || 'stdio';
@@ -273,7 +275,7 @@ async function main(): Promise<void> {
             res.status(400).json({
               jsonrpc: '2.0',
               id: id || null,
-              error: { code: -32600, message: 'Invalid Request: jsonrpc must be "2.0"' }
+              error: { code: -32600, message: 'Invalid Request: jsonrpc must be "2.0"' },
             });
             return;
           }
@@ -283,7 +285,7 @@ async function main(): Promise<void> {
             const tools = getRegisteredTools().map(handler => ({
               name: handler.name,
               description: handler.description,
-              inputSchema: handler.inputSchema
+              inputSchema: handler.inputSchema,
             }));
             res.json({ jsonrpc: '2.0', id, result: { tools } });
             return;
@@ -296,7 +298,7 @@ async function main(): Promise<void> {
               res.status(400).json({
                 jsonrpc: '2.0',
                 id,
-                error: { code: -32602, message: 'Invalid params: tool name required' }
+                error: { code: -32602, message: 'Invalid params: tool name required' },
               });
               return;
             }
@@ -310,7 +312,7 @@ async function main(): Promise<void> {
               res.json({
                 jsonrpc: '2.0',
                 id,
-                error: { code: -32603, message: `Tool execution error: ${errorMessage}` }
+                error: { code: -32603, message: `Tool execution error: ${errorMessage}` },
               });
             }
             return;
@@ -320,23 +322,29 @@ async function main(): Promise<void> {
           res.status(400).json({
             jsonrpc: '2.0',
             id,
-            error: { code: -32601, message: `Method not found: ${method}` }
+            error: { code: -32601, message: `Method not found: ${method}` },
           });
         } catch (error) {
           console.error('Error handling HTTP request:', error);
           res.status(500).json({
             jsonrpc: '2.0',
             id: null,
-            error: { code: -32603, message: 'Internal server error' }
+            error: { code: -32603, message: 'Internal server error' },
           });
         }
       });
 
       // Start HTTP server
       const httpServer = app.listen(port, () => {
-console.error(`BoondManager MCP Server running on HTTP at http://localhost:${port}`);
-        console.error('HTTP endpoint: POST http://localhost:' + port + '/mcp/http (stateless, no session required)');
-        console.error('SSE endpoint: GET http://localhost:' + port + '/mcp (requires session management)');
+        console.error(`BoondManager MCP Server running on HTTP at http://localhost:${port}`);
+        console.error(
+          'HTTP endpoint: POST http://localhost:' +
+            port +
+            '/mcp/http (stateless, no session required)'
+        );
+        console.error(
+          'SSE endpoint: GET http://localhost:' + port + '/mcp (requires session management)'
+        );
         console.error('Health check: GET http://localhost:' + port + '/health');
         console.error('SSE endpoint: GET http://localhost:' + port + '/mcp');
         console.error('Health check: GET http://localhost:' + port + '/health');

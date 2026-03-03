@@ -1442,29 +1442,59 @@ export class BoondAPIClient {
     const startDate = expenseParams.startDate || monthStart;
     const endDate = expenseParams.endDate || monthEnd;
 
-    const query = new URLSearchParams({
+    const queryBase = {
       ...(params.query && { query: params.query }),
       startDate,
       endDate,
+      dateFrom: startDate,
+      dateTo: endDate,
       page: String(params.page),
       limit: String(Math.min(params.limit, 100)),
-    });
+    };
 
-    try {
-      return await this.request<SearchResponse<ExpenseReport>>(
-        'GET',
-        `/expenses-reports?${query.toString()}`
-      );
-    } catch (error) {
-      const statusCode = getApiStatusCode(error);
-      if (statusCode === 404 || statusCode === 405) {
-        return this.request<SearchResponse<ExpenseReport>>(
-          'GET',
-          `/expense-reports?${query.toString()}`
+    const query = new URLSearchParams(queryBase);
+    const bodyPayload = {
+      ...(params.query ? { query: params.query } : {}),
+      startDate,
+      endDate,
+      dateFrom: startDate,
+      dateTo: endDate,
+      page: params.page,
+      limit: Math.min(params.limit, 100),
+    };
+
+    const attempts: Array<{
+      method: 'GET' | 'POST';
+      path: string;
+      body?: Record<string, unknown>;
+    }> = [
+      { method: 'GET', path: `/expenses-reports?${query.toString()}` },
+      { method: 'GET', path: `/expense-reports?${query.toString()}` },
+      { method: 'GET', path: `/expenses-reports/search?${query.toString()}` },
+      { method: 'POST', path: '/expenses-reports/search', body: bodyPayload },
+      { method: 'GET', path: `/expense-reports/search?${query.toString()}` },
+      { method: 'POST', path: '/expense-reports/search', body: bodyPayload },
+    ];
+
+    let lastError: unknown;
+    for (const attempt of attempts) {
+      try {
+        return await this.request<SearchResponse<ExpenseReport>>(
+          attempt.method,
+          attempt.path,
+          attempt.body
         );
+      } catch (error) {
+        const statusCode = getApiStatusCode(error);
+        if (statusCode === 404 || statusCode === 405 || statusCode === 422) {
+          lastError = error;
+          continue;
+        }
+        throw error;
       }
-      throw error;
     }
+
+    throw lastError;
   }
 
   /**
@@ -1648,30 +1678,44 @@ export class BoondAPIClient {
       limit: String(Math.min(params.limit, 100)),
     });
 
-    try {
-      return await this.request<SearchResponse<Document>>('GET', `/documents?${query.toString()}`);
-    } catch (error) {
-      const statusCode = getApiStatusCode(error);
-      if (statusCode === 404 || statusCode === 405) {
-        try {
-          return await this.request<SearchResponse<Document>>(
-            'GET',
-            `/documents/search?${query.toString()}`
-          );
-        } catch (fallbackError) {
-          const fallbackStatus = getApiStatusCode(fallbackError);
-          if (fallbackStatus === 404 || fallbackStatus === 405) {
-            return this.request<SearchResponse<Document>>('POST', '/documents/search', {
-              ...(params.query ? { query: params.query } : {}),
-              page: params.page,
-              limit: Math.min(params.limit, 100),
-            });
-          }
-          throw fallbackError;
+    const bodyPayload = {
+      ...(params.query ? { query: params.query } : {}),
+      page: params.page,
+      limit: Math.min(params.limit, 100),
+    };
+
+    const attempts: Array<{
+      method: 'GET' | 'POST';
+      path: string;
+      body?: Record<string, unknown>;
+    }> = [
+      { method: 'GET', path: `/documents?${query.toString()}` },
+      { method: 'GET', path: `/documents/search?${query.toString()}` },
+      { method: 'POST', path: '/documents/search', body: bodyPayload },
+      { method: 'GET', path: `/documents/list?${query.toString()}` },
+      { method: 'POST', path: '/documents/list', body: bodyPayload },
+      { method: 'POST', path: '/documents', body: bodyPayload },
+    ];
+
+    let lastError: unknown;
+    for (const attempt of attempts) {
+      try {
+        return await this.request<SearchResponse<Document>>(
+          attempt.method,
+          attempt.path,
+          attempt.body
+        );
+      } catch (error) {
+        const statusCode = getApiStatusCode(error);
+        if (statusCode === 404 || statusCode === 405 || statusCode === 422) {
+          lastError = error;
+          continue;
         }
+        throw error;
       }
-      throw error;
     }
+
+    throw lastError;
   }
 
   /**
