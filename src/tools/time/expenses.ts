@@ -61,9 +61,10 @@ function normalizeExpenseReport(report: ExpenseReport): {
         ));
 
   const resourceIdValue = record['resourceId'] ?? record['consultantId'] ?? report.resourceId;
-  const resourceId = String(
-    resourceIdValue || formatUnknownWithDebug('resourceId', [resourceIdValue])
-  );
+  const resourceId =
+    resourceIdValue === undefined || resourceIdValue === null || resourceIdValue === ''
+      ? formatUnknownWithDebug('resourceId', [resourceIdValue])
+      : String(resourceIdValue);
 
   return {
     id: report.id,

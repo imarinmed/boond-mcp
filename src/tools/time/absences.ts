@@ -31,6 +31,14 @@ type DisplayAbsence = {
   updatedAt?: string;
 };
 
+function formatDisplayDate(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleDateString();
+}
+
 function normalizeAbsenceForDisplay(absence: Absence): DisplayAbsence {
   const normalized = normalizeAbsence(absence);
   const normalizedFields = normalized._normalized;
@@ -58,8 +66,8 @@ function formatAbsenceList(result: SearchResponse<Absence>): string {
 
   const absences = result.data.map(absence => {
     const normalized = normalizeAbsenceForDisplay(absence);
-    const startDate = new Date(normalized.startDate).toLocaleDateString();
-    const endDate = new Date(normalized.endDate).toLocaleDateString();
+    const startDate = formatDisplayDate(normalized.startDate);
+    const endDate = formatDisplayDate(normalized.endDate);
     return `  • ID: ${absence.id}
     Resource ID: ${normalized.resourceId}
     Type: ${normalized.type}
@@ -82,8 +90,8 @@ function formatAbsenceList(result: SearchResponse<Absence>): string {
 
 function formatAbsence(absence: Absence): string {
   const normalized = normalizeAbsenceForDisplay(absence);
-  const startDate = new Date(normalized.startDate).toLocaleDateString();
-  const endDate = new Date(normalized.endDate).toLocaleDateString();
+  const startDate = formatDisplayDate(normalized.startDate);
+  const endDate = formatDisplayDate(normalized.endDate);
   const created = normalized.createdAt
     ? new Date(normalized.createdAt).toLocaleString()
     : 'Unknown';

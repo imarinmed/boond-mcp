@@ -69,7 +69,7 @@ function shouldEnrichDocument(doc: Document): boolean {
 }
 
 function formatSize(sizeInBytes: number): string {
-  if (!Number.isFinite(sizeInBytes) || sizeInBytes <= 0) {
+  if (!Number.isFinite(sizeInBytes) || sizeInBytes < 0) {
     return 'unknown';
   }
 
