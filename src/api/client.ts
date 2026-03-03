@@ -1634,7 +1634,30 @@ export class BoondAPIClient {
       limit: String(Math.min(params.limit, 100)),
     });
 
-    return this.request<SearchResponse<Document>>('GET', `/documents?${query.toString()}`);
+    try {
+      return await this.request<SearchResponse<Document>>('GET', `/documents?${query.toString()}`);
+    } catch (error) {
+      const statusCode = getApiStatusCode(error);
+      if (statusCode === 404 || statusCode === 405) {
+        try {
+          return await this.request<SearchResponse<Document>>(
+            'GET',
+            `/documents/search?${query.toString()}`
+          );
+        } catch (fallbackError) {
+          const fallbackStatus = getApiStatusCode(fallbackError);
+          if (fallbackStatus === 404 || fallbackStatus === 405) {
+            return this.request<SearchResponse<Document>>('POST', '/documents/search', {
+              ...(params.query ? { query: params.query } : {}),
+              page: params.page,
+              limit: Math.min(params.limit, 100),
+            });
+          }
+          throw fallbackError;
+        }
+      }
+      throw error;
+    }
   }
 
   /**

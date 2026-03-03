@@ -3,6 +3,104 @@ import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { handleSearchError } from '../../utils/error-handling.js';
 
+function readString(record: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function readNumber(record: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const parsed = Number(value);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return undefined;
+}
+
+function normalizeTimeReportLine(report: Record<string, unknown>): {
+  date: string;
+  hours: string;
+  status: string;
+  resourceId: string;
+  projectId: string;
+} {
+  const regularTimesRaw = report['regularTimes'];
+  const regularTimes = Array.isArray(regularTimesRaw)
+    ? (regularTimesRaw.filter(item => item && typeof item === 'object') as Array<
+        Record<string, unknown>
+      >)
+    : [];
+  const firstRegular = regularTimes[0];
+  const date =
+    (firstRegular && typeof firstRegular['startDate'] === 'string'
+      ? firstRegular['startDate']
+      : undefined) ||
+    readString(report, ['date', 'workDate', 'day', 'term']) ||
+    'Unknown';
+
+  const summed = regularTimes
+    .map(item => item['duration'])
+    .reduce<number | undefined>((acc, value) => {
+      const n = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+      if (Number.isNaN(n)) {
+        return acc;
+      }
+      return (acc ?? 0) + n;
+    }, undefined);
+
+  const hours =
+    summed ??
+    readNumber(report, [
+      'hours',
+      'duration',
+      'workedHours',
+      'quantity',
+      'time',
+      'nbHours',
+      'numberOfHours',
+    ]);
+
+  const projectFromRegular =
+    firstRegular && typeof firstRegular['project'] === 'object' && firstRegular['project'] !== null
+      ? (firstRegular['project'] as Record<string, unknown>)['id']
+      : undefined;
+
+  const status =
+    readString(report, ['status', 'state', 'workflowStatus', 'validationStatus']) ||
+    (typeof report['state'] === 'number' ? String(report['state']) : 'unknown');
+
+  const resourceId =
+    readString(report, ['resourceId', 'consultantId', 'dependsOnId']) ||
+    (typeof report['resourceId'] === 'number' ? String(report['resourceId']) : 'unknown');
+
+  const projectId =
+    (typeof projectFromRegular === 'number' || typeof projectFromRegular === 'string'
+      ? String(projectFromRegular)
+      : undefined) ||
+    readString(report, ['projectId', 'missionId', 'assignmentId']) ||
+    (typeof report['projectId'] === 'number' ? String(report['projectId']) : 'unknown');
+
+  return {
+    date,
+    hours: hours !== undefined ? String(hours) : 'unknown',
+    status,
+    resourceId,
+    projectId,
+  };
+}
+
 const dateRangeSearchSchema = z.object({
   entity: z.enum(['timereports', 'absences', 'projects']),
   dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
@@ -41,8 +139,11 @@ export function registerDateRangeSearchTool(server: McpServer, client: BoondAPIC
             });
             lines.push(`Found ${results.data.length} time reports`);
             for (const tr of results.data) {
-              lines.push(`  • ${tr.date} - ${tr.hours}h (${tr.status})`);
-              lines.push(`    Resource: ${tr.resourceId}, Project: ${tr.projectId}`);
+              const normalized = normalizeTimeReportLine(tr as unknown as Record<string, unknown>);
+              lines.push(`  • ${normalized.date} - ${normalized.hours}h (${normalized.status})`);
+              lines.push(
+                `    Resource: ${normalized.resourceId}, Project: ${normalized.projectId}`
+              );
             }
             break;
           }

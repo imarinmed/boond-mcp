@@ -325,8 +325,18 @@ export const expenseReportIdSchema = z.object({
 export const searchExpenseReportsSchema = z.object({
   resourceId: z.string().optional(),
   status: z.enum(['draft', 'submitted', 'approved', 'rejected', 'paid']).optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+  startDate: z
+    .string()
+    .refine(value => /^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isNaN(Date.parse(value)), {
+      message: 'startDate must be YYYY-MM-DD or valid ISO datetime',
+    })
+    .optional(),
+  endDate: z
+    .string()
+    .refine(value => /^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isNaN(Date.parse(value)), {
+      message: 'endDate must be YYYY-MM-DD or valid ISO datetime',
+    })
+    .optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(20),
 });
