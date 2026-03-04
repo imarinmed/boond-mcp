@@ -78,6 +78,7 @@ export function registerAlertTools(server: McpServer, client: BoondAPIClient): v
           },
           10
         );
+        result.data = result.data.slice(0, validated.limit);
         const text = formatAlertList(result);
 
         return {

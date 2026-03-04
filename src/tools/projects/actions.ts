@@ -84,6 +84,7 @@ export function registerActionTools(server: McpServer, client: BoondAPIClient): 
           },
           10
         );
+        result.data = result.data.slice(0, params.limit);
         return {
           content: [
             {

@@ -113,6 +113,42 @@ function formatAbsence(absence: Absence): string {
   );
 }
 
+function normalizeId(id: string): string {
+  const numeric = Number(id);
+  if (Number.isFinite(numeric) && id.trim() !== '') {
+    return String(numeric);
+  }
+  return id;
+}
+
+async function resolveAbsenceFromSearch(
+  client: BoondAPIClient,
+  targetId: string,
+  maxPages: number = 5,
+  pageSize: number = 100
+): Promise<Absence | null> {
+  const exactId = targetId;
+  const normalizedTarget = normalizeId(targetId);
+
+  for (let page = 1; page <= maxPages; page += 1) {
+    const result = await client.searchAbsences({ page, limit: pageSize });
+    const match = result.data.find(absence => {
+      const candidateId = String(absence.id);
+      return candidateId === exactId || normalizeId(candidateId) === normalizedTarget;
+    });
+
+    if (match) {
+      return match;
+    }
+
+    if (page * pageSize >= result.pagination.total) {
+      break;
+    }
+  }
+
+  return null;
+}
+
 export function registerAbsenceTools(server: McpServer, client: BoondAPIClient): void {
   server.registerTool(
     'boond_absences_search',
@@ -154,7 +190,25 @@ export function registerAbsenceTools(server: McpServer, client: BoondAPIClient):
     async params => {
       try {
         const validated = absenceIdSchema.parse(params);
-        const absence = await client.getAbsence(validated.id);
+        let absence: Absence;
+
+        try {
+          absence = await client.getAbsence(validated.id);
+        } catch (error) {
+          const message = error instanceof Error ? error.message.toLowerCase() : '';
+          const isNotFound = message.includes('not found') || message.includes('404');
+
+          if (!isNotFound) {
+            throw error;
+          }
+
+          const fallback = await resolveAbsenceFromSearch(client, validated.id);
+          if (!fallback) {
+            throw error;
+          }
+          absence = fallback;
+        }
+
         const text = formatAbsence(absence);
 
         return {
