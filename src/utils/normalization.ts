@@ -53,7 +53,7 @@ export function readBoolean(record: Record<string, unknown>, keys: string[]): bo
 }
 
 export function pickStatus(record: Record<string, unknown>): string {
-  const candidates = ['status', 'state', 'workflowStatus', 'validationStatus', 'activity'];
+  const candidates = ['status', 'state', 'workflowStatus', 'validationStatus', 'activity', 'active'];
   for (const key of candidates) {
     const value = record[key];
     if (typeof value === 'string' && value.trim().length > 0) {

@@ -13,7 +13,7 @@ import { enrichItemsWithDetails } from '../../utils/enrichment.js';
 import { readNumber, readString, formatUnknownWithDebug } from '../../utils/normalization.js';
 
 function formatDate(value: string | undefined): string {
-  if (!value) return 'Unknown';
+  if (!value) return 'unknown';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString();
@@ -66,11 +66,11 @@ function normalizeExpenseReport(report: ExpenseReport): {
       ? formatUnknownWithDebug('resourceId', [resourceIdValue])
       : String(resourceIdValue);
 
-  return {
-    id: report.id,
-    resourceId,
-    periodStart: periodStart || 'Unknown',
-    periodEnd: periodEnd || 'Unknown',
+   return {
+     id: report.id,
+     resourceId,
+     periodStart: periodStart || 'unknown',
+     periodEnd: periodEnd || 'unknown',
     total: totalNum !== undefined ? String(totalNum) : String(report.total ?? 'unknown'),
     status,
     ...(report.createdAt ? { createdAt: report.createdAt } : {}),
@@ -80,15 +80,15 @@ function normalizeExpenseReport(report: ExpenseReport): {
 }
 
 function shouldEnrichExpenseReport(report: ExpenseReport): boolean {
-  const normalized = normalizeExpenseReport(report);
-  return (
-    normalized.resourceId === 'unknown' ||
-    normalized.periodStart === 'Unknown' ||
-    normalized.periodEnd === 'Unknown' ||
-    normalized.total === 'unknown' ||
-    normalized.status === 'unknown'
-  );
-}
+   const normalized = normalizeExpenseReport(report);
+   return (
+     normalized.resourceId === 'unknown' ||
+     normalized.periodStart === 'unknown' ||
+     normalized.periodEnd === 'unknown' ||
+     normalized.total === 'unknown' ||
+     normalized.status === 'unknown'
+   );
+ }
 
 function formatExpenseReportList(result: SearchResponse<ExpenseReport>): string {
   if (!result.data || result.data.length === 0) {
@@ -121,12 +121,12 @@ function formatExpenseReport(report: ExpenseReport): string {
   const normalized = normalizeExpenseReport(report);
   const startDate = formatDate(normalized.periodStart);
   const endDate = formatDate(normalized.periodEnd);
-  const created = normalized.createdAt
-    ? new Date(normalized.createdAt).toLocaleString()
-    : 'Unknown';
-  const updated = normalized.updatedAt
-    ? new Date(normalized.updatedAt).toLocaleString()
-    : 'Unknown';
+   const created = normalized.createdAt
+     ? new Date(normalized.createdAt).toLocaleString()
+     : 'unknown';
+   const updated = normalized.updatedAt
+     ? new Date(normalized.updatedAt).toLocaleString()
+     : 'unknown';
 
   let itemsText = '';
   if (normalized.items && normalized.items.length > 0) {

@@ -94,10 +94,10 @@ function formatAbsence(absence: Absence): string {
   const endDate = formatDisplayDate(normalized.endDate);
   const created = normalized.createdAt
     ? new Date(normalized.createdAt).toLocaleString()
-    : 'Unknown';
+    : 'unknown';
   const updated = normalized.updatedAt
     ? new Date(normalized.updatedAt).toLocaleString()
-    : 'Unknown';
+    : 'unknown';
 
   return (
     `Absence Details:\n` +
