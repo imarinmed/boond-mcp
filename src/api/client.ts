@@ -86,6 +86,7 @@ import type {
   UpdateDocument,
   UpdateSetting,
 } from '../types/schemas.js';
+import { classifyError } from '../utils/error-classification.js';
 
 type BoondJwtMode = 'normal' | 'god';
 
@@ -259,6 +260,11 @@ function getApiStatusCode(error: unknown): number | undefined {
 
   const status = (error as { statusCode?: unknown }).statusCode;
   return typeof status === 'number' ? status : undefined;
+}
+
+function shouldShortCircuitFallback(error: unknown): boolean {
+  const classification = classifyError(error).classification;
+  return classification === 'permission_denied' || classification === 'provider_blocked';
 }
 
 function toYearMonth(value: string): string {
@@ -1486,6 +1492,9 @@ export class BoondAPIClient {
         );
       } catch (error) {
         const statusCode = getApiStatusCode(error);
+        if (shouldShortCircuitFallback(error)) {
+          throw error;
+        }
         if (statusCode === 403 || statusCode === 404 || statusCode === 405 || statusCode === 422) {
           lastError = error;
           continue;
@@ -1720,6 +1729,10 @@ export class BoondAPIClient {
             `Document search validation failed on ${attempt.method} ${attempt.path}: this Boond instance rejected the search request format.`,
             'DOCUMENT_SEARCH_VALIDATION_ERROR'
           );
+        }
+
+        if (shouldShortCircuitFallback(error)) {
+          throw error;
         }
 
         if (statusCode === 403 || statusCode === 404 || statusCode === 405) {

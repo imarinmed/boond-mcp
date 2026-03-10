@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, BoondAPIClient } from '../../src/api/client.js';
+import { BoondAPIClient } from '../../src/api/client.js';
 
 const originalFetch = global.fetch;
 
@@ -65,7 +65,7 @@ describe('document search fallback behavior', () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse(404, { message: 'Not found' }))
       .mockResolvedValueOnce(jsonResponse(405, { message: 'Method not allowed' }))
-      .mockResolvedValueOnce(jsonResponse(403, { message: 'Forbidden' }))
+      .mockResolvedValueOnce(jsonResponse(404, { message: 'Not found' }))
       .mockResolvedValueOnce(jsonResponse(404, { message: 'Not found' }))
       .mockResolvedValueOnce(jsonResponse(405, { message: 'Method not allowed' }));
 
@@ -97,7 +97,7 @@ describe('document search fallback behavior', () => {
       .mockResolvedValueOnce(jsonResponse(404, { message: 'Not found' }))
       .mockResolvedValueOnce(jsonResponse(404, { message: 'Not found' }))
       .mockResolvedValueOnce(jsonResponse(405, { message: 'Method not allowed' }))
-      .mockResolvedValueOnce(jsonResponse(403, { message: 'Forbidden' }))
+      .mockResolvedValueOnce(jsonResponse(405, { message: 'Method not allowed' }))
       .mockResolvedValueOnce(jsonResponse(404, { message: 'Not found' }));
 
     const client = new BoondAPIClient('test-token');
