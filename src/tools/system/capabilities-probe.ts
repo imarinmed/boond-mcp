@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
-import { ApiError } from '../../api/client.js';
 import { z } from 'zod';
+import { classifyError } from '../../utils/error-classification.js';
 import { handleSearchError } from '../../utils/error-handling.js';
 
 const capabilitiesProbeSchema = z.object({
@@ -24,31 +24,24 @@ interface ProbeResult {
   details: string;
 }
 
-function classifyError(error: unknown): { status: ProbeStatus; details: string } {
-  if (error instanceof ApiError) {
-    if (error.statusCode === 401) {
-      return { status: 'auth_error', details: error.message };
-    }
-    if (error.statusCode === 403) {
-      return { status: 'forbidden', details: error.message };
-    }
-    if (error.statusCode === 404) {
-      return { status: 'not_available', details: error.message };
-    }
-    if (error.statusCode === 405) {
-      return { status: 'method_mismatch', details: error.message };
-    }
-    if (error.statusCode === 422) {
-      return { status: 'validation', details: error.message };
-    }
-    return { status: 'error', details: `${error.code}: ${error.message}` };
-  }
+function classifyProbeError(error: unknown): { status: ProbeStatus; details: string } {
+  const classified = classifyError(error);
 
-  if (error instanceof Error) {
-    return { status: 'error', details: error.message };
+  switch (classified.classification) {
+    case 'permission_denied':
+    case 'provider_blocked':
+      return { status: 'forbidden', details: classified.details };
+    case 'resource_not_found':
+      return { status: 'not_available', details: classified.details };
+    case 'unsupported_endpoint':
+      return { status: 'method_mismatch', details: classified.details };
+    case 'validation_rejected':
+      return { status: 'validation', details: classified.details };
+    case 'input_required':
+      return { status: 'input_required', details: classified.details };
+    default:
+      return { status: 'error', details: classified.details };
   }
-
-  return { status: 'error', details: String(error) };
 }
 
 function currentMonthRange(): { startDate: string; endDate: string } {
@@ -67,7 +60,7 @@ async function runProbe(name: string, fn: () => Promise<unknown>): Promise<Probe
     await fn();
     return { probe: name, status: 'ok', details: 'access granted' };
   } catch (error) {
-    const classified = classifyError(error);
+    const classified = classifyProbeError(error);
     return {
       probe: name,
       status: classified.status,
@@ -157,7 +150,7 @@ export function registerCapabilitiesProbeTool(server: McpServer, client: BoondAP
               );
             }
           } catch (error) {
-            const classified = classifyError(error);
+            const classified = classifyProbeError(error);
             results.push({
               probe: 'banking_transactions_search',
               status: classified.status,
