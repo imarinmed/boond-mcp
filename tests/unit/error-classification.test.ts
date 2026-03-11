@@ -3,6 +3,11 @@ import { ApiError } from '../../src/api/client.js';
 import { classifyError } from '../../src/utils/error-classification.js';
 
 describe('error classification taxonomy', () => {
+  it('classifies 401 as auth_error', () => {
+    const result = classifyError(new ApiError(401, 'Invalid API credentials', 'AUTH_ERROR'));
+    expect(result.classification).toBe('auth_error');
+  });
+
   it('classifies explicit permission failures as permission_denied', () => {
     const result = classifyError(new ApiError(403, 'Forbidden: insufficient permissions', 'FORBIDDEN'));
     expect(result.classification).toBe('permission_denied');

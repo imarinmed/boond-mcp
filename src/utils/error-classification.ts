@@ -1,6 +1,7 @@
 import { ApiError } from '../api/client.js';
 
 export type ErrorClassification =
+  | 'auth_error'
   | 'permission_denied'
   | 'provider_blocked'
   | 'resource_not_found'
@@ -29,6 +30,10 @@ export function classifyError(error: unknown): ClassifiedError {
   if (error instanceof ApiError) {
     if (isInputRequiredMessage(error.message)) {
       return { classification: 'input_required', details: error.message };
+    }
+
+    if (error.statusCode === 401) {
+      return { classification: 'auth_error', details: error.message };
     }
 
     if (error.statusCode === 403) {

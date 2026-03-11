@@ -28,6 +28,8 @@ function classifyProbeError(error: unknown): { status: ProbeStatus; details: str
   const classified = classifyError(error);
 
   switch (classified.classification) {
+    case 'auth_error':
+      return { status: 'auth_error', details: classified.details };
     case 'permission_denied':
     case 'provider_blocked':
       return { status: 'forbidden', details: classified.details };
