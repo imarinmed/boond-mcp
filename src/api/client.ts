@@ -75,6 +75,7 @@ import type {
   UpdatePurchase,
   CreateOrder,
   UpdateOrder,
+  SearchExpenseReports,
   CreateExpenseReport,
   UpdateExpenseReport,
   CreateAgency,
@@ -1435,8 +1436,12 @@ export class BoondAPIClient {
   /**
    * Search expense reports
    */
-  async searchExpenseReports(params: SearchParams): Promise<SearchResponse<ExpenseReport>> {
-    const expenseParams = params as SearchParams & { startDate?: string; endDate?: string };
+  async searchExpenseReports(params: SearchExpenseReports): Promise<SearchResponse<ExpenseReport>> {
+    const currentMonth = toYearMonth(new Date().toISOString());
+    const startMonth =
+      params.startMonth || (params.startDate ? toYearMonth(params.startDate) : currentMonth);
+    const endMonth = params.endMonth || (params.endDate ? toYearMonth(params.endDate) : startMonth);
+
     const today = new Date();
     const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1))
       .toISOString()
@@ -1445,11 +1450,13 @@ export class BoondAPIClient {
       .toISOString()
       .slice(0, 10);
 
-    const startDate = expenseParams.startDate || monthStart;
-    const endDate = expenseParams.endDate || monthEnd;
+    const startDate = params.startDate || monthStart;
+    const endDate = params.endDate || monthEnd;
 
     const queryBase = {
       ...(params.query && { query: params.query }),
+      startMonth,
+      endMonth,
       startDate,
       endDate,
       dateFrom: startDate,
@@ -1461,6 +1468,8 @@ export class BoondAPIClient {
     const query = new URLSearchParams(queryBase);
     const bodyPayload = {
       ...(params.query ? { query: params.query } : {}),
+      startMonth,
+      endMonth,
       startDate,
       endDate,
       dateFrom: startDate,

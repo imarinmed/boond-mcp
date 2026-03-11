@@ -323,7 +323,16 @@ export const expenseReportIdSchema = z.object({
 });
 
 export const searchExpenseReportsSchema = z.object({
+  query: z.string().optional(),
   resourceId: z.string().optional(),
+  startMonth: z
+    .string()
+    .regex(/^[0-9]{4}-[0-9]{2}$/, 'startMonth must be YYYY-MM')
+    .optional(),
+  endMonth: z
+    .string()
+    .regex(/^[0-9]{4}-[0-9]{2}$/, 'endMonth must be YYYY-MM')
+    .optional(),
   status: z.enum(['draft', 'submitted', 'approved', 'rejected', 'paid']).optional(),
   startDate: z
     .string()
