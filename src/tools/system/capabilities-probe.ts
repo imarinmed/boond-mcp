@@ -110,9 +110,12 @@ export function registerCapabilitiesProbeTool(server: McpServer, client: BoondAP
         results.push(
           await runProbe('contracts_search', () => client.searchContracts({ page: 1, limit }))
         );
-        results.push(
-          await runProbe('documents_search', () => client.searchDocuments({ page: 1, limit }))
-        );
+        results.push({
+          probe: 'documents_search',
+          status: 'input_required',
+          details:
+            'Global document search is unsupported by Boond API design. Discover document IDs from an owning record first, then use boond_documents_get.',
+        });
         results.push(
           await runProbe('quotations_search', () => client.searchQuotations({ page: 1, limit }))
         );

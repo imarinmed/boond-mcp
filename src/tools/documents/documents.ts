@@ -5,9 +5,8 @@ import {
   documentIdSchema,
   updateDocumentWithIdSchema,
 } from '../../types/schemas.js';
-import type { Document, SearchResponse } from '../../types/boond.js';
-import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
-import { enrichItemsWithDetails } from '../../utils/enrichment.js';
+import type { Document } from '../../types/boond.js';
+import { handleToolError } from '../../utils/error-handling.js';
 import {
   pickDate,
   pickName,
@@ -57,45 +56,12 @@ function normalizeDocument(doc: Document): {
   };
 }
 
-function shouldEnrichDocument(doc: Document): boolean {
-  const normalized = normalizeDocument(doc);
-  return (
-    normalized.name.startsWith('Document #') ||
-    normalized.type === 'unknown' ||
-    normalized.uploadedAt === 'unknown' ||
-    normalized.uploadedBy === 'unknown' ||
-    normalized.url === 'unknown'
-  );
-}
-
 function formatSize(sizeInBytes: number): string {
   if (!Number.isFinite(sizeInBytes) || sizeInBytes < 0) {
     return 'unknown';
   }
 
   return `${(sizeInBytes / 1024).toFixed(2)} KB`;
-}
-
-function formatDocumentList(result: SearchResponse<Document>): string {
-  if (result.data.length === 0) {
-    return 'No documents found.';
-  }
-
-  const documents = result.data.map(doc => {
-    const normalized = normalizeDocument(doc);
-    const lines: string[] = [];
-    lines.push(`📄 Document: ${normalized.name} (ID: ${normalized.id})`);
-    lines.push(`   Type: ${normalized.type}`);
-    lines.push(`   Size: ${formatSize(normalized.size)}`);
-    if (normalized.folderId !== 'unknown') lines.push(`   Folder: ${normalized.folderId}`);
-    lines.push(`   Uploaded: ${normalized.uploadedAt}`);
-    lines.push(`   Uploaded by: ${normalized.uploadedBy}`);
-    return lines.join('\n');
-  });
-
-  const summary = `Found ${result.data.length} document(s) (Page ${result.pagination.page}/${Math.ceil(result.pagination.total / result.pagination.limit)} of ${result.pagination.total} total)`;
-
-  return `${summary}\n\n${documents.join('\n\n')}`;
 }
 
 function formatDocument(doc: Document): string {
@@ -119,28 +85,21 @@ export function registerDocumentTools(server: McpServer, client: BoondAPIClient)
   server.registerTool(
     'boond_documents_search',
     {
-      description: 'Search documents by criteria',
+      description: 'Deprecated: global documents search is not supported by Boond API',
       inputSchema: searchParamsSchema.shape,
     },
     async params => {
-      try {
-        const validated = searchParamsSchema.parse(params);
-        const result = await client.searchDocuments(validated);
-        result.data = await enrichItemsWithDetails(
-          result.data,
-          document => client.getDocument(document.id),
-          shouldEnrichDocument,
-          10
-        );
-        result.data = result.data.slice(0, validated.limit);
-        const text = formatDocumentList(result);
+      searchParamsSchema.parse(params);
 
-        return {
-          content: [{ type: 'text', text }],
-        };
-      } catch (error) {
-        return handleSearchError(error, 'documents');
-      }
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Global document search is not supported by Boond API. Retrieve documents from an owning record (for example a candidate, resource, company, project, or contract), then fetch the document by its ID with boond_documents_get.',
+          },
+        ],
+        isError: true,
+      };
     }
   );
 
