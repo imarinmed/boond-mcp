@@ -667,6 +667,14 @@ export class BoondAPIClient {
     return this.request<Candidate>('GET', `/candidates/${encodeURIComponent(id)}`);
   }
 
+  async getCandidateInformation(id: string): Promise<Candidate> {
+    return this.request<Candidate>('GET', `/candidates/${encodeURIComponent(id)}/information`);
+  }
+
+  async getCandidateDefault(): Promise<Candidate> {
+    return this.request<Candidate>('GET', '/candidates/default');
+  }
+
   /**
    * Create candidate
    */
@@ -708,6 +716,14 @@ export class BoondAPIClient {
     return this.request<Company>('GET', `/companies/${encodeURIComponent(id)}`);
   }
 
+  async getCompanyContacts(id: string): Promise<SearchResponse<Contact>> {
+    return this.request<SearchResponse<Contact>>('GET', `/companies/${encodeURIComponent(id)}/contacts`);
+  }
+
+  async getCompanyDefault(): Promise<Company> {
+    return this.request<Company>('GET', '/companies/default');
+  }
+
   /**
    * Create company
    */
@@ -747,6 +763,17 @@ export class BoondAPIClient {
    */
   async getOpportunity(id: string): Promise<Opportunity> {
     return this.request<Opportunity>('GET', `/opportunities/${encodeURIComponent(id)}`);
+  }
+
+  async getOpportunityQuotations(id: string): Promise<SearchResponse<Quotation>> {
+    return this.request<SearchResponse<Quotation>>(
+      'GET',
+      `/opportunities/${encodeURIComponent(id)}/quotations`
+    );
+  }
+
+  async getOpportunityDefault(): Promise<Opportunity> {
+    return this.request<Opportunity>('GET', '/opportunities/default');
   }
 
   /**
@@ -918,6 +945,10 @@ export class BoondAPIClient {
     return merged as unknown as Resource;
   }
 
+  async getResourceContracts(id: string): Promise<SearchResponse<Contract>> {
+    return this.request<SearchResponse<Contract>>('GET', `/resources/${encodeURIComponent(id)}/contracts`);
+  }
+
   /**
    * Create resource
    */
@@ -1002,6 +1033,14 @@ export class BoondAPIClient {
    */
   async getProject(id: string): Promise<Project> {
     return this.request<Project>('GET', `/projects/${encodeURIComponent(id)}`);
+  }
+
+  async getProjectDeliveries(id: string): Promise<SearchResponse<Delivery>> {
+    return this.request<SearchResponse<Delivery>>('GET', `/projects/${encodeURIComponent(id)}/deliveries`);
+  }
+
+  async getProjectDefault(): Promise<Project> {
+    return this.request<Project>('GET', '/projects/default');
   }
 
   /**
@@ -1280,6 +1319,10 @@ export class BoondAPIClient {
    */
   async getInvoice(id: string): Promise<Invoice> {
     return this.request<Invoice>('GET', `/invoices/${encodeURIComponent(id)}`);
+  }
+
+  async getInvoiceDefault(): Promise<Invoice> {
+    return this.request<Invoice>('GET', '/invoices/default');
   }
 
   /**
