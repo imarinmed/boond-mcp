@@ -780,14 +780,17 @@ export class BoondAPIClient {
       limit: String(Math.min(params.limit, 100)), // Cap at 100
     });
 
-    return this.request<SearchResponse<Quotation>>('GET', `/quotations?${query.toString()}`);
+    return this.request<SearchResponse<Quotation>>(
+      'GET',
+      `/apps/quotations/quotations?${query.toString()}`
+    );
   }
 
   /**
    * Get quotation by ID
    */
   async getQuotation(id: string): Promise<Quotation> {
-    return this.request<Quotation>('GET', `/quotations/${encodeURIComponent(id)}`);
+    return this.request<Quotation>('GET', `/apps/quotations/quotations/${encodeURIComponent(id)}`);
   }
 
   /**
@@ -941,35 +944,14 @@ export class BoondAPIClient {
    */
   async searchContracts(params: SearchParams): Promise<SearchResponse<Contract>> {
     const query = new URLSearchParams({
-      ...(params.query && { query: params.query }),
       page: String(params.page),
-      limit: String(Math.min(params.limit, 100)), // Cap at 100
+      limit: String(Math.min(params.limit, 100)),
     });
 
-    try {
-      return await this.request<SearchResponse<Contract>>('GET', `/contracts?${query.toString()}`);
-    } catch (error) {
-      const statusCode = getApiStatusCode(error);
-      if (statusCode === 404 || statusCode === 405) {
-        try {
-          return await this.request<SearchResponse<Contract>>(
-            'GET',
-            `/contracts/search?${query.toString()}`
-          );
-        } catch (fallbackError) {
-          const fallbackStatus = getApiStatusCode(fallbackError);
-          if (fallbackStatus === 404 || fallbackStatus === 405) {
-            return this.request<SearchResponse<Contract>>('POST', '/contracts/search', {
-              ...(params.query ? { query: params.query } : {}),
-              page: params.page,
-              limit: Math.min(params.limit, 100),
-            });
-          }
-          throw fallbackError;
-        }
-      }
-      throw error;
-    }
+    return this.request<SearchResponse<Contract>>(
+      'GET',
+      `/apps/contracts/contracts?${query.toString()}`
+    );
   }
 
   /**
@@ -1826,7 +1808,7 @@ export class BoondAPIClient {
    * Search settings
    */
   async searchSettings(): Promise<SearchResponse<Setting>> {
-    return this.request<SearchResponse<Setting>>('GET', '/settings');
+    return this.request<SearchResponse<Setting>>('GET', '/application/settings');
   }
 
   /**

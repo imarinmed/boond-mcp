@@ -5,7 +5,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import {
-  searchParamsSchema,
+  contractSearchParamsSchema,
   createContractSchema,
   contractIdSchema,
   updateContractWithIdSchema,
@@ -114,12 +114,12 @@ export function registerContractTools(server: McpServer, client: BoondAPIClient)
   server.registerTool(
     'boond_contracts_search',
     {
-      description: 'Search contracts by resource, type, or other criteria',
-      inputSchema: searchParamsSchema.shape,
+      description: 'List contracts with pagination only (page, limit)',
+      inputSchema: contractSearchParamsSchema.shape,
     },
     async params => {
       try {
-        const validated = searchParamsSchema.parse(params);
+        const validated = contractSearchParamsSchema.parse(params);
         const result = await client.searchContracts(validated);
         const text = formatContractList(result);
 
