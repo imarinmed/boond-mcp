@@ -664,6 +664,11 @@ export const contractIdSchema = z.object({
   id: z.string().min(1, 'Contract ID is required'),
 });
 
+export const contractSearchParamsSchema = z.object({
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(100).default(20),
+});
+
 export const createContractSchema = z.object({
   resourceId: z.string().min(1, 'Resource ID is required'),
   startDate: z.string().min(1, 'Start date is required'),
