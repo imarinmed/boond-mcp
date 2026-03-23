@@ -9,6 +9,8 @@ import {
 } from '../../types/schemas.js';
 import type { Delivery, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function resolveDeliveryName(delivery: Delivery): string {
   const record = delivery as unknown as Record<string, unknown>;
@@ -135,6 +137,7 @@ export function registerDeliveryTools(server: McpServer, client: BoondAPIClient)
     'boond_deliveries_search',
     {
       description: 'Search deliveries by criteria',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: {
         query: z.string().optional().describe('Search query'),
         page: z.number().int().min(1).default(1).describe('Page number'),
@@ -165,6 +168,7 @@ export function registerDeliveryTools(server: McpServer, client: BoondAPIClient)
     'boond_deliveries_get',
     {
       description: 'Get a delivery by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: {
         id: z.string().min(1, 'Delivery ID is required').describe('Delivery ID'),
       },
@@ -191,16 +195,23 @@ export function registerDeliveryTools(server: McpServer, client: BoondAPIClient)
     'boond_deliveries_create',
     {
       description: 'Create a new delivery',
-      inputSchema: {
-        name: z.string().min(1).describe('Delivery name'),
-        projectId: z.string().min(1).describe('Project ID'),
-        description: z.string().optional().describe('Delivery description'),
-        dueDate: z.string().optional().describe('Due date (ISO 8601 format)'),
-      },
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: z
+        .object({
+          name: z.string().min(1).describe('Delivery name'),
+          projectId: z.string().min(1).describe('Project ID'),
+          description: z.string().optional().describe('Delivery description'),
+          dueDate: z.string().optional().describe('Due date (ISO 8601 format)'),
+        })
+        .merge(dryRunSchema).shape,
     },
     async input => {
       try {
-        const data = createDeliverySchema.parse(input);
+        const validated = createDeliverySchema.merge(dryRunSchema).parse(input);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Delivery', data);
+        }
         const delivery = await client.createDelivery(data);
         return {
           content: [
@@ -220,21 +231,27 @@ export function registerDeliveryTools(server: McpServer, client: BoondAPIClient)
     'boond_deliveries_update',
     {
       description: 'Update an existing delivery',
-      inputSchema: {
-        id: z.string().min(1).describe('Delivery ID'),
-        name: z.string().optional().describe('Delivery name'),
-        description: z.string().optional().describe('Delivery description'),
-        dueDate: z.string().optional().describe('Due date (ISO 8601 format)'),
-        status: z
-          .enum(['pending', 'in-progress', 'completed', 'blocked'])
-          .optional()
-          .describe('Delivery status'),
-      },
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: z
+        .object({
+          id: z.string().min(1).describe('Delivery ID'),
+          name: z.string().optional().describe('Delivery name'),
+          description: z.string().optional().describe('Delivery description'),
+          dueDate: z.string().optional().describe('Due date (ISO 8601 format)'),
+          status: z
+            .enum(['pending', 'in-progress', 'completed', 'blocked'])
+            .optional()
+            .describe('Delivery status'),
+        })
+        .merge(dryRunSchema).shape,
     },
     async input => {
       try {
-        const validated = updateDeliveryWithIdSchema.parse(input);
-        const { id, ...updateData } = validated;
+        const validated = updateDeliveryWithIdSchema.merge(dryRunSchema).parse(input);
+        const { id, dryRun, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Delivery', { id, ...updateData });
+        }
         const delivery = await client.updateDelivery(id, updateData);
         return {
           content: [
@@ -254,14 +271,16 @@ export function registerDeliveryTools(server: McpServer, client: BoondAPIClient)
     'boond_deliveries_send',
     {
       description: 'Send a delivery notification',
-      inputSchema: {
-        id: z.string().min(1).describe('Delivery ID'),
-      },
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: deliveryIdSchema.merge(dryRunSchema).shape,
     },
     async input => {
       try {
-        const params = deliveryIdSchema.parse(input);
-        const delivery = await client.sendDelivery(params.id);
+        const { id, dryRun } = deliveryIdSchema.merge(dryRunSchema).parse(input);
+        if (dryRun) {
+          return dryRunResponse('Send Delivery', { id });
+        }
+        const delivery = await client.sendDelivery(id);
         return {
           content: [
             {

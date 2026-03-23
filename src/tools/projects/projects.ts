@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { searchProjectsSchema, projectIdSchema } from '../../types/schemas.js';
 import type { Project, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function pickProjectStatus(project: Project): string {
   const record = project as unknown as Record<string, unknown>;
@@ -68,6 +70,7 @@ export function registerProjectTools(server: McpServer, client: BoondAPIClient):
     'boond_projects_search',
     {
       description: 'Search projects by criteria',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: {
         query: z.string().optional().describe('Search query'),
         page: z.number().int().min(1).default(1).describe('Page number'),
@@ -101,6 +104,7 @@ export function registerProjectTools(server: McpServer, client: BoondAPIClient):
     'boond_projects_get',
     {
       description: 'Get a project by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: {
         id: z.string().min(1, 'Project ID is required').describe('Project ID'),
       },
@@ -127,19 +131,21 @@ export function registerProjectTools(server: McpServer, client: BoondAPIClient):
     'boond_projects_delete',
     {
       description: 'Delete a project by ID',
-      inputSchema: {
-        id: z.string().min(1, 'Project ID is required').describe('Project ID'),
-      },
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: projectIdSchema.merge(dryRunSchema).shape,
     },
     async input => {
       try {
-        const params = projectIdSchema.parse(input);
-        await client.deleteProject(params.id);
+        const { id, dryRun } = projectIdSchema.merge(dryRunSchema).parse(input);
+        if (dryRun) {
+          return dryRunResponse('Delete Project', { id });
+        }
+        await client.deleteProject(id);
         return {
           content: [
             {
               type: 'text',
-              text: `Project ${params.id} deleted successfully.`,
+              text: `Project ${id} deleted successfully.`,
             },
           ],
         };

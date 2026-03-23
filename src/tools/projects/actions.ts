@@ -11,6 +11,8 @@ import type { Action, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { enrichItemsWithDetails } from '../../utils/enrichment.js';
 import { normalizeAction, pickName, pickStatus } from '../../utils/normalization.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function formatActionList(result: SearchResponse<Action>): string {
   if (result.data.length === 0) {
@@ -57,6 +59,7 @@ export function registerActionTools(server: McpServer, client: BoondAPIClient): 
     'boond_actions_search',
     {
       description: 'Search actions by criteria',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: {
         query: z.string().optional().describe('Search query'),
         page: z.number().int().min(1).default(1).describe('Page number'),
@@ -103,6 +106,7 @@ export function registerActionTools(server: McpServer, client: BoondAPIClient): 
     'boond_actions_get',
     {
       description: 'Get an action by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: {
         id: z.string().min(1, 'Action ID is required').describe('Action ID'),
       },
@@ -129,23 +133,30 @@ export function registerActionTools(server: McpServer, client: BoondAPIClient): 
     'boond_actions_create',
     {
       description: 'Create a new action',
-      inputSchema: {
-        name: z.string().min(1, 'Action name is required').describe('Action name'),
-        projectId: z.string().optional().describe('Project ID'),
-        status: z
-          .enum(['open', 'in-progress', 'completed', 'cancelled'])
-          .optional()
-          .default('open')
-          .describe('Action status'),
-        assignedTo: z.string().optional().describe('User ID to assign action to'),
-        dueDate: z.string().optional().describe('Due date (ISO 8601 format)'),
-        priority: z.enum(['low', 'medium', 'high']).optional().describe('Action priority'),
-        description: z.string().optional().describe('Action description'),
-      },
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: z
+        .object({
+          name: z.string().min(1, 'Action name is required').describe('Action name'),
+          projectId: z.string().optional().describe('Project ID'),
+          status: z
+            .enum(['open', 'in-progress', 'completed', 'cancelled'])
+            .optional()
+            .default('open')
+            .describe('Action status'),
+          assignedTo: z.string().optional().describe('User ID to assign action to'),
+          dueDate: z.string().optional().describe('Due date (ISO 8601 format)'),
+          priority: z.enum(['low', 'medium', 'high']).optional().describe('Action priority'),
+          description: z.string().optional().describe('Action description'),
+        })
+        .merge(dryRunSchema).shape,
     },
     async input => {
       try {
-        const data = createActionSchema.parse(input);
+        const validated = createActionSchema.merge(dryRunSchema).parse(input);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Action', data);
+        }
         const action = await client.createAction(data);
         return {
           content: [
@@ -165,23 +176,29 @@ export function registerActionTools(server: McpServer, client: BoondAPIClient): 
     'boond_actions_update',
     {
       description: 'Update an existing action',
-      inputSchema: {
-        id: z.string().min(1, 'Action ID is required').describe('Action ID'),
-        name: z.string().optional().describe('Action name'),
-        status: z
-          .enum(['open', 'in-progress', 'completed', 'cancelled'])
-          .optional()
-          .describe('Action status'),
-        assignedTo: z.string().optional().describe('User ID to assign action to'),
-        dueDate: z.string().optional().describe('Due date (ISO 8601 format)'),
-        priority: z.enum(['low', 'medium', 'high']).optional().describe('Action priority'),
-        description: z.string().optional().describe('Action description'),
-      },
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: z
+        .object({
+          id: z.string().min(1, 'Action ID is required').describe('Action ID'),
+          name: z.string().optional().describe('Action name'),
+          status: z
+            .enum(['open', 'in-progress', 'completed', 'cancelled'])
+            .optional()
+            .describe('Action status'),
+          assignedTo: z.string().optional().describe('User ID to assign action to'),
+          dueDate: z.string().optional().describe('Due date (ISO 8601 format)'),
+          priority: z.enum(['low', 'medium', 'high']).optional().describe('Action priority'),
+          description: z.string().optional().describe('Action description'),
+        })
+        .merge(dryRunSchema).shape,
     },
     async input => {
       try {
-        const validated = updateActionWithIdSchema.parse(input);
-        const { id, ...updateData } = validated;
+        const validated = updateActionWithIdSchema.merge(dryRunSchema).parse(input);
+        const { id, dryRun, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Action', { id, ...updateData });
+        }
         const action = await client.updateAction(id, updateData);
         return {
           content: [
@@ -201,19 +218,21 @@ export function registerActionTools(server: McpServer, client: BoondAPIClient): 
     'boond_actions_delete',
     {
       description: 'Delete an action',
-      inputSchema: {
-        id: z.string().min(1, 'Action ID is required').describe('Action ID'),
-      },
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: actionIdSchema.merge(dryRunSchema).shape,
     },
     async input => {
       try {
-        const params = actionIdSchema.parse(input);
-        await client.deleteAction(params.id);
+        const { id, dryRun } = actionIdSchema.merge(dryRunSchema).parse(input);
+        if (dryRun) {
+          return dryRunResponse('Delete Action', { id });
+        }
+        await client.deleteAction(id);
         return {
           content: [
             {
               type: 'text',
-              text: `✓ Action with ID ${params.id} deleted successfully`,
+              text: `✓ Action with ID ${id} deleted successfully`,
             },
           ],
         };
