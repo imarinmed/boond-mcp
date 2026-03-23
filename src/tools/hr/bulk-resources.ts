@@ -2,50 +2,58 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
-const bulkCreateResourceSchema = z.object({
-  resources: z
-    .array(
-      z.object({
-        firstName: z.string().min(1, 'First name is required'),
-        lastName: z.string().min(1, 'Last name is required'),
-        email: z.string().email('Valid email is required'),
-        phone: z.string().optional(),
-        status: z.enum(['active', 'inactive', 'archived']).optional(),
-        department: z.string().optional(),
-        skills: z.array(z.string()).optional(),
-        hourlyRate: z.number().positive().optional(),
-      })
-    )
-    .min(1, 'At least one resource is required')
-    .max(50, 'Maximum 50 resources per bulk operation'),
-});
+const bulkCreateResourceSchema = z
+  .object({
+    resources: z
+      .array(
+        z.object({
+          firstName: z.string().min(1, 'First name is required'),
+          lastName: z.string().min(1, 'Last name is required'),
+          email: z.string().email('Valid email is required'),
+          phone: z.string().optional(),
+          status: z.enum(['active', 'inactive', 'archived']).optional(),
+          department: z.string().optional(),
+          skills: z.array(z.string()).optional(),
+          hourlyRate: z.number().positive().optional(),
+        })
+      )
+      .min(1, 'At least one resource is required')
+      .max(50, 'Maximum 50 resources per bulk operation'),
+  })
+  .extend(dryRunSchema.shape);
 
-const bulkUpdateResourceSchema = z.object({
-  updates: z
-    .array(
-      z.object({
-        id: z.string().min(1, 'Resource ID is required'),
-        firstName: z.string().min(1).optional(),
-        lastName: z.string().min(1).optional(),
-        email: z.string().email().optional(),
-        phone: z.string().optional(),
-        status: z.enum(['active', 'inactive', 'archived']).optional(),
-        department: z.string().optional(),
-        skills: z.array(z.string()).optional(),
-        hourlyRate: z.number().positive().optional(),
-      })
-    )
-    .min(1, 'At least one update is required')
-    .max(50, 'Maximum 50 updates per bulk operation'),
-});
+const bulkUpdateResourceSchema = z
+  .object({
+    updates: z
+      .array(
+        z.object({
+          id: z.string().min(1, 'Resource ID is required'),
+          firstName: z.string().min(1).optional(),
+          lastName: z.string().min(1).optional(),
+          email: z.string().email().optional(),
+          phone: z.string().optional(),
+          status: z.enum(['active', 'inactive', 'archived']).optional(),
+          department: z.string().optional(),
+          skills: z.array(z.string()).optional(),
+          hourlyRate: z.number().positive().optional(),
+        })
+      )
+      .min(1, 'At least one update is required')
+      .max(50, 'Maximum 50 updates per bulk operation'),
+  })
+  .extend(dryRunSchema.shape);
 
-const bulkDeleteResourceSchema = z.object({
-  ids: z
-    .array(z.string().min(1, 'Resource ID is required'))
-    .min(1, 'At least one ID is required')
-    .max(50, 'Maximum 50 deletions per bulk operation'),
-});
+const bulkDeleteResourceSchema = z
+  .object({
+    ids: z
+      .array(z.string().min(1, 'Resource ID is required'))
+      .min(1, 'At least one ID is required')
+      .max(50, 'Maximum 50 deletions per bulk operation'),
+  })
+  .extend(dryRunSchema.shape);
 
 export function registerBulkCreateResourceTool(server: McpServer, client: BoondAPIClient): void {
   server.registerTool(
@@ -53,11 +61,19 @@ export function registerBulkCreateResourceTool(server: McpServer, client: BoondA
     {
       description: 'Create multiple resources in a single operation (max 50)',
       inputSchema: bulkCreateResourceSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkCreateResourceSchema.parse(params);
-        const { resources } = validated;
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Bulk Create Resources', {
+            count: rest.resources.length,
+            items: rest.resources,
+          });
+        }
+        const { resources } = rest;
 
         const results: Array<{
           success: boolean;
@@ -136,11 +152,19 @@ export function registerBulkUpdateResourceTool(server: McpServer, client: BoondA
     {
       description: 'Update multiple resources in a single operation (max 50)',
       inputSchema: bulkUpdateResourceSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkUpdateResourceSchema.parse(params);
-        const { updates } = validated;
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Bulk Update Resources', {
+            count: rest.updates.length,
+            updates: rest.updates,
+          });
+        }
+        const { updates } = rest;
 
         const results: Array<{
           success: boolean;
@@ -217,11 +241,19 @@ export function registerBulkDeleteResourceTool(server: McpServer, client: BoondA
       description:
         'Delete multiple resources in a single operation (max 50). Use with caution - this cannot be undone!',
       inputSchema: bulkDeleteResourceSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkDeleteResourceSchema.parse(params);
-        const { ids } = validated;
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Bulk Delete Resources', {
+            count: rest.ids.length,
+            ids: rest.ids,
+          });
+        }
+        const { ids } = rest;
 
         const results: Array<{
           success: boolean;

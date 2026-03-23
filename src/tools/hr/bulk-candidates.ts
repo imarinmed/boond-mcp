@@ -2,47 +2,55 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
-const bulkCreateCandidateSchema = z.object({
-  candidates: z
-    .array(
-      z.object({
-        firstName: z.string().min(1, 'First name is required'),
-        lastName: z.string().min(1, 'Last name is required'),
-        email: z.string().email('Valid email is required'),
-        phone: z.string().optional(),
-        city: z.string().optional(),
-        country: z.string().optional(),
-      })
-    )
-    .min(1, 'At least one candidate is required')
-    .max(50, 'Maximum 50 candidates per bulk operation'),
-});
+const bulkCreateCandidateSchema = z
+  .object({
+    candidates: z
+      .array(
+        z.object({
+          firstName: z.string().min(1, 'First name is required'),
+          lastName: z.string().min(1, 'Last name is required'),
+          email: z.string().email('Valid email is required'),
+          phone: z.string().optional(),
+          city: z.string().optional(),
+          country: z.string().optional(),
+        })
+      )
+      .min(1, 'At least one candidate is required')
+      .max(50, 'Maximum 50 candidates per bulk operation'),
+  })
+  .extend(dryRunSchema.shape);
 
-const bulkUpdateCandidateSchema = z.object({
-  updates: z
-    .array(
-      z.object({
-        id: z.string().min(1, 'Candidate ID is required'),
-        firstName: z.string().optional(),
-        lastName: z.string().optional(),
-        email: z.string().email().optional(),
-        phone: z.string().optional(),
-        city: z.string().optional(),
-        country: z.string().optional(),
-        status: z.enum(['active', 'inactive', 'archived']).optional(),
-      })
-    )
-    .min(1, 'At least one update is required')
-    .max(50, 'Maximum 50 updates per bulk operation'),
-});
+const bulkUpdateCandidateSchema = z
+  .object({
+    updates: z
+      .array(
+        z.object({
+          id: z.string().min(1, 'Candidate ID is required'),
+          firstName: z.string().optional(),
+          lastName: z.string().optional(),
+          email: z.string().email().optional(),
+          phone: z.string().optional(),
+          city: z.string().optional(),
+          country: z.string().optional(),
+          status: z.enum(['active', 'inactive', 'archived']).optional(),
+        })
+      )
+      .min(1, 'At least one update is required')
+      .max(50, 'Maximum 50 updates per bulk operation'),
+  })
+  .extend(dryRunSchema.shape);
 
-const bulkDeleteCandidateSchema = z.object({
-  ids: z
-    .array(z.string().min(1, 'Candidate ID is required'))
-    .min(1, 'At least one ID is required')
-    .max(50, 'Maximum 50 deletions per bulk operation'),
-});
+const bulkDeleteCandidateSchema = z
+  .object({
+    ids: z
+      .array(z.string().min(1, 'Candidate ID is required'))
+      .min(1, 'At least one ID is required')
+      .max(50, 'Maximum 50 deletions per bulk operation'),
+  })
+  .extend(dryRunSchema.shape);
 
 export function registerBulkCreateCandidateTool(server: McpServer, client: BoondAPIClient): void {
   server.registerTool(
@@ -50,11 +58,19 @@ export function registerBulkCreateCandidateTool(server: McpServer, client: Boond
     {
       description: 'Create multiple candidates in a single operation (max 50)',
       inputSchema: bulkCreateCandidateSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkCreateCandidateSchema.parse(params);
-        const { candidates } = validated;
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Bulk Create Candidates', {
+            count: rest.candidates.length,
+            items: rest.candidates,
+          });
+        }
+        const { candidates } = rest;
 
         const results: Array<{
           success: boolean;
@@ -133,11 +149,19 @@ export function registerBulkUpdateCandidateTool(server: McpServer, client: Boond
     {
       description: 'Update multiple candidates in a single operation (max 50)',
       inputSchema: bulkUpdateCandidateSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkUpdateCandidateSchema.parse(params);
-        const { updates } = validated;
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Bulk Update Candidates', {
+            count: rest.updates.length,
+            updates: rest.updates,
+          });
+        }
+        const { updates } = rest;
 
         const results: Array<{
           success: boolean;
@@ -214,11 +238,19 @@ export function registerBulkDeleteCandidateTool(server: McpServer, client: Boond
       description:
         'Delete multiple candidates in a single operation (max 50). Use with caution - this cannot be undone!',
       inputSchema: bulkDeleteCandidateSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkDeleteCandidateSchema.parse(params);
-        const { ids } = validated;
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Bulk Delete Candidates', {
+            count: rest.ids.length,
+            ids: rest.ids,
+          });
+        }
+        const { ids } = rest;
 
         const results: Array<{
           success: boolean;

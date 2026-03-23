@@ -2,48 +2,56 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
-const bulkCreateContactSchema = z.object({
-  contacts: z
-    .array(
-      z.object({
-        firstName: z.string().min(1, 'First name is required'),
-        lastName: z.string().min(1, 'Last name is required'),
-        email: z.string().email('Valid email is required'),
-        phone: z.string().optional(),
-        companyId: z.string().min(1, 'Company ID is required'),
-        jobTitle: z.string().optional(),
-        department: z.string().optional(),
-      })
-    )
-    .min(1, 'At least one contact is required')
-    .max(50, 'Maximum 50 contacts per bulk operation'),
-});
+const bulkCreateContactSchema = z
+  .object({
+    contacts: z
+      .array(
+        z.object({
+          firstName: z.string().min(1, 'First name is required'),
+          lastName: z.string().min(1, 'Last name is required'),
+          email: z.string().email('Valid email is required'),
+          phone: z.string().optional(),
+          companyId: z.string().min(1, 'Company ID is required'),
+          jobTitle: z.string().optional(),
+          department: z.string().optional(),
+        })
+      )
+      .min(1, 'At least one contact is required')
+      .max(50, 'Maximum 50 contacts per bulk operation'),
+  })
+  .extend(dryRunSchema.shape);
 
-const bulkUpdateContactSchema = z.object({
-  updates: z
-    .array(
-      z.object({
-        id: z.string().min(1, 'Contact ID is required'),
-        firstName: z.string().min(1).optional(),
-        lastName: z.string().min(1).optional(),
-        email: z.string().email().optional(),
-        phone: z.string().optional(),
-        companyId: z.string().optional(),
-        jobTitle: z.string().optional(),
-        department: z.string().optional(),
-      })
-    )
-    .min(1, 'At least one update is required')
-    .max(50, 'Maximum 50 updates per bulk operation'),
-});
+const bulkUpdateContactSchema = z
+  .object({
+    updates: z
+      .array(
+        z.object({
+          id: z.string().min(1, 'Contact ID is required'),
+          firstName: z.string().min(1).optional(),
+          lastName: z.string().min(1).optional(),
+          email: z.string().email().optional(),
+          phone: z.string().optional(),
+          companyId: z.string().optional(),
+          jobTitle: z.string().optional(),
+          department: z.string().optional(),
+        })
+      )
+      .min(1, 'At least one update is required')
+      .max(50, 'Maximum 50 updates per bulk operation'),
+  })
+  .extend(dryRunSchema.shape);
 
-const bulkDeleteContactSchema = z.object({
-  ids: z
-    .array(z.string().min(1, 'Contact ID is required'))
-    .min(1, 'At least one ID is required')
-    .max(50, 'Maximum 50 deletions per bulk operation'),
-});
+const bulkDeleteContactSchema = z
+  .object({
+    ids: z
+      .array(z.string().min(1, 'Contact ID is required'))
+      .min(1, 'At least one ID is required')
+      .max(50, 'Maximum 50 deletions per bulk operation'),
+  })
+  .extend(dryRunSchema.shape);
 
 export function registerBulkCreateContactTool(server: McpServer, client: BoondAPIClient): void {
   server.registerTool(
@@ -51,11 +59,19 @@ export function registerBulkCreateContactTool(server: McpServer, client: BoondAP
     {
       description: 'Create multiple contacts in a single operation (max 50)',
       inputSchema: bulkCreateContactSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkCreateContactSchema.parse(params);
-        const { contacts } = validated;
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Bulk Create Contacts', {
+            count: rest.contacts.length,
+            items: rest.contacts,
+          });
+        }
+        const { contacts } = rest;
 
         const results: Array<{
           success: boolean;
@@ -134,11 +150,19 @@ export function registerBulkUpdateContactTool(server: McpServer, client: BoondAP
     {
       description: 'Update multiple contacts in a single operation (max 50)',
       inputSchema: bulkUpdateContactSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkUpdateContactSchema.parse(params);
-        const { updates } = validated;
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Bulk Update Contacts', {
+            count: rest.updates.length,
+            updates: rest.updates,
+          });
+        }
+        const { updates } = rest;
 
         const results: Array<{
           success: boolean;
@@ -215,11 +239,19 @@ export function registerBulkDeleteContactTool(server: McpServer, client: BoondAP
       description:
         'Delete multiple contacts in a single operation (max 50). Use with caution - this cannot be undone!',
       inputSchema: bulkDeleteContactSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkDeleteContactSchema.parse(params);
-        const { ids } = validated;
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Bulk Delete Contacts', {
+            count: rest.ids.length,
+            ids: rest.ids,
+          });
+        }
+        const { ids } = rest;
 
         const results: Array<{
           success: boolean;
