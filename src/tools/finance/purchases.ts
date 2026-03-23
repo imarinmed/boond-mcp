@@ -14,6 +14,8 @@ import type { Purchase, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { enrichItemsWithDetails } from '../../utils/enrichment.js';
 import { pickCompanyId, pickStatus, pickTotal } from '../../utils/normalization.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function toPurchaseRecord(purchase: Purchase): Record<string, unknown> {
   return purchase as unknown as Record<string, unknown>;
@@ -86,6 +88,7 @@ export function registerPurchaseTools(server: McpServer, client: BoondAPIClient)
     'boond_purchases_search',
     {
       description: 'Search purchases by criteria',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchParamsSchema.shape,
     },
     async params => {
@@ -117,6 +120,7 @@ export function registerPurchaseTools(server: McpServer, client: BoondAPIClient)
     'boond_purchases_get',
     {
       description: 'Get a purchase by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: purchaseIdSchema.shape,
     },
     async params => {
@@ -141,12 +145,18 @@ export function registerPurchaseTools(server: McpServer, client: BoondAPIClient)
     'boond_purchases_create',
     {
       description: 'Create a new purchase',
-      inputSchema: createPurchaseSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: createPurchaseSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = createPurchaseSchema.parse(params);
-        const purchase = await client.createPurchase(validated);
+        const validated = createPurchaseSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Purchase', data);
+        }
+
+        const purchase = await client.createPurchase(data);
         const text = formatPurchase(purchase);
 
         return {
@@ -170,12 +180,17 @@ export function registerPurchaseTools(server: McpServer, client: BoondAPIClient)
     'boond_purchases_update',
     {
       description: 'Update an existing purchase',
-      inputSchema: updatePurchaseWithIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: updatePurchaseWithIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = updatePurchaseWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updatePurchaseWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Purchase', { id, ...updateData });
+        }
+
         const purchase = await client.updatePurchase(id, updateData);
         const text = formatPurchase(purchase);
 
@@ -197,11 +212,17 @@ export function registerPurchaseTools(server: McpServer, client: BoondAPIClient)
     'boond_purchases_delete',
     {
       description: 'Delete a purchase by ID',
-      inputSchema: purchaseIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: purchaseIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = purchaseIdSchema.parse(params);
+        const validated = purchaseIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun } = validated;
+        if (dryRun) {
+          return dryRunResponse('Delete Purchase', { id: validated.id });
+        }
+
         await client.deletePurchase(validated.id);
         return {
           content: [

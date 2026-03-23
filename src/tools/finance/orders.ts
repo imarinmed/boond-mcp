@@ -14,6 +14,8 @@ import type { Order, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { enrichItemsWithDetails } from '../../utils/enrichment.js';
 import { pickCompanyId, pickStatus, pickTotal } from '../../utils/normalization.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function toOrderRecord(order: Order): Record<string, unknown> {
   return order as unknown as Record<string, unknown>;
@@ -76,6 +78,7 @@ export function registerOrderTools(server: McpServer, client: BoondAPIClient): v
     'boond_orders_search',
     {
       description: 'Search orders by criteria',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchParamsSchema.shape,
     },
     async params => {
@@ -107,6 +110,7 @@ export function registerOrderTools(server: McpServer, client: BoondAPIClient): v
     'boond_orders_get',
     {
       description: 'Get an order by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: orderIdSchema.shape,
     },
     async params => {
@@ -131,12 +135,18 @@ export function registerOrderTools(server: McpServer, client: BoondAPIClient): v
     'boond_orders_create',
     {
       description: 'Create a new order',
-      inputSchema: createOrderSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: createOrderSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = createOrderSchema.parse(params);
-        const order = await client.createOrder(validated);
+        const validated = createOrderSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Order', data);
+        }
+
+        const order = await client.createOrder(data);
         const text = formatOrder(order);
 
         return {
@@ -160,12 +170,17 @@ export function registerOrderTools(server: McpServer, client: BoondAPIClient): v
     'boond_orders_update',
     {
       description: 'Update an existing order',
-      inputSchema: updateOrderWithIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: updateOrderWithIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = updateOrderWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateOrderWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Order', { id, ...updateData });
+        }
+
         const order = await client.updateOrder(id, updateData);
         const text = formatOrder(order);
 

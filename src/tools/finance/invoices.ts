@@ -14,6 +14,8 @@ import type { Invoice, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { enrichItemsWithDetails } from '../../utils/enrichment.js';
 import { pickCompanyId, pickStatus, pickTotal } from '../../utils/normalization.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function toInvoiceRecord(invoice: Invoice): Record<string, unknown> {
   return invoice as unknown as Record<string, unknown>;
@@ -90,6 +92,7 @@ export function registerInvoiceTools(server: McpServer, client: BoondAPIClient):
     'boond_invoices_search',
     {
       description: 'Search invoices by criteria',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchParamsSchema.shape,
     },
     async params => {
@@ -121,6 +124,7 @@ export function registerInvoiceTools(server: McpServer, client: BoondAPIClient):
     'boond_invoices_get',
     {
       description: 'Get an invoice by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: invoiceIdSchema.shape,
     },
     async params => {
@@ -145,12 +149,18 @@ export function registerInvoiceTools(server: McpServer, client: BoondAPIClient):
     'boond_invoices_create',
     {
       description: 'Create a new invoice',
-      inputSchema: createInvoiceSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: createInvoiceSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = createInvoiceSchema.parse(params);
-        const invoice = await client.createInvoice(validated);
+        const validated = createInvoiceSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Invoice', data);
+        }
+
+        const invoice = await client.createInvoice(data);
         const text = formatInvoice(invoice);
 
         return {
@@ -174,12 +184,17 @@ export function registerInvoiceTools(server: McpServer, client: BoondAPIClient):
     'boond_invoices_update',
     {
       description: 'Update an existing invoice',
-      inputSchema: updateInvoiceWithIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: updateInvoiceWithIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = updateInvoiceWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateInvoiceWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Invoice', { id, ...updateData });
+        }
+
         const invoice = await client.updateInvoice(id, updateData);
         const text = formatInvoice(invoice);
 
@@ -201,11 +216,17 @@ export function registerInvoiceTools(server: McpServer, client: BoondAPIClient):
     'boond_invoices_delete',
     {
       description: 'Delete an invoice by ID',
-      inputSchema: invoiceIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: invoiceIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = invoiceIdSchema.parse(params);
+        const validated = invoiceIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun } = validated;
+        if (dryRun) {
+          return dryRunResponse('Delete Invoice', { id: validated.id });
+        }
+
         await client.deleteInvoice(validated.id);
         return {
           content: [
