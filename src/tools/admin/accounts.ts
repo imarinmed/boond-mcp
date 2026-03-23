@@ -8,6 +8,8 @@ import {
 } from '../../types/schemas.js';
 import type { Account, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function pickAccountLabel(account: Account): string {
   const record = account as unknown as Record<string, unknown>;
@@ -79,6 +81,7 @@ export function registerAccountTools(server: McpServer, client: BoondAPIClient):
     'boond_accounts_search',
     {
       description: 'Search accounts by username or criteria',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchParamsSchema.shape,
     },
     async params => {
@@ -100,6 +103,7 @@ export function registerAccountTools(server: McpServer, client: BoondAPIClient):
     'boond_accounts_get',
     {
       description: 'Get an account by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: accountIdSchema.shape,
     },
     async params => {
@@ -121,12 +125,17 @@ export function registerAccountTools(server: McpServer, client: BoondAPIClient):
     'boond_accounts_create',
     {
       description: 'Create a new account',
-      inputSchema: createAccountSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: createAccountSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = createAccountSchema.parse(params);
-        const account = await client.createAccount(validated);
+        const validated = createAccountSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Account', data);
+        }
+        const account = await client.createAccount(data);
         const text = formatAccount(account);
 
         return {
@@ -147,12 +156,16 @@ export function registerAccountTools(server: McpServer, client: BoondAPIClient):
     'boond_accounts_update',
     {
       description: 'Update an existing account',
-      inputSchema: updateAccountWithIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: updateAccountWithIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = updateAccountWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateAccountWithIdSchema.merge(dryRunSchema).parse(params);
+        const { id, dryRun, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Account', { id, ...updateData });
+        }
         const account = await client.updateAccount(id, updateData);
         const text = formatAccount(account);
 
