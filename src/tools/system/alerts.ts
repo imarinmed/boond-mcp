@@ -10,6 +10,8 @@ import type { Alert, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { enrichItemsWithDetails } from '../../utils/enrichment.js';
 import { normalizeAlert } from '../../utils/normalization.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function formatAlertList(result: SearchResponse<Alert>): string {
   if (result.data.length === 0) {
@@ -61,6 +63,7 @@ export function registerAlertTools(server: McpServer, client: BoondAPIClient): v
     'boond_alerts_search',
     {
       description: 'Search alerts by criteria',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchParamsSchema.shape,
     },
     async params => {
@@ -94,6 +97,7 @@ export function registerAlertTools(server: McpServer, client: BoondAPIClient): v
     'boond_alerts_get',
     {
       description: 'Get an alert by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: alertIdSchema.shape,
     },
     async params => {
@@ -116,11 +120,17 @@ export function registerAlertTools(server: McpServer, client: BoondAPIClient): v
     'boond_alerts_update',
     {
       description: 'Update an alert status (mark as resolved)',
-      inputSchema: updateAlertWithIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: updateAlertWithIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const { id, ...updateData } = updateAlertWithIdSchema.parse(params);
+        const { id, dryRun, ...updateData } = updateAlertWithIdSchema
+          .merge(dryRunSchema)
+          .parse(params);
+        if (dryRun) {
+          return dryRunResponse('Update Alert', { id, ...updateData });
+        }
         const validated = updateAlertSchema.parse(updateData);
         const updatePayload =
           validated.resolved === undefined ? {} : { resolved: validated.resolved };

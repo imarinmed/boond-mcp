@@ -1,29 +1,28 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { BoondAPIClient } from "../../api/client.js";
-import { z } from "zod";
-import {
-  settingIdSchema,
-  updateSettingWithIdSchema,
-} from "../../types/schemas.js";
-import type { Setting, SearchResponse } from "../../types/boond.js";
-import { handleSearchError, handleToolError } from "../../utils/error-handling.js";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { BoondAPIClient } from '../../api/client.js';
+import { z } from 'zod';
+import { settingIdSchema, updateSettingWithIdSchema } from '../../types/schemas.js';
+import type { Setting, SearchResponse } from '../../types/boond.js';
+import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function formatSettingList(result: SearchResponse<Setting>): string {
   if (result.data.length === 0) {
-    return "No settings found.";
+    return 'No settings found.';
   }
 
-  const settings = result.data.map((setting) => {
+  const settings = result.data.map(setting => {
     const lines: string[] = [];
     lines.push(`⚙️ ${setting.key} (ID: ${setting.id})`);
     if (setting.category) lines.push(`   Category: ${setting.category}`);
     lines.push(`   Value: ${JSON.stringify(setting.value)}`);
-    return lines.join("\n");
+    return lines.join('\n');
   });
 
   const summary = `Found ${result.data.length} setting(s) (Page ${result.pagination.page}/${Math.ceil(result.pagination.total / result.pagination.limit)} of ${result.pagination.total} total)`;
 
-  return `${summary}\n\n${settings.join("\n\n")}`;
+  return `${summary}\n\n${settings.join('\n\n')}`;
 }
 
 function formatSetting(setting: Setting): string {
@@ -35,17 +34,15 @@ function formatSetting(setting: Setting): string {
   if (setting.createdAt) lines.push(`Created: ${setting.createdAt}`);
   if (setting.updatedAt) lines.push(`Updated: ${setting.updatedAt}`);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
-export function registerSettingTools(
-  server: McpServer,
-  client: BoondAPIClient
-): void {
+export function registerSettingTools(server: McpServer, client: BoondAPIClient): void {
   server.registerTool(
-    "boond_settings_search",
+    'boond_settings_search',
     {
-      description: "Search all system settings",
+      description: 'Search all system settings',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: z.object({}).shape,
     },
     async () => {
@@ -54,31 +51,32 @@ export function registerSettingTools(
         const text = formatSettingList(result);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleSearchError(error, "settings");
+        return handleSearchError(error, 'settings');
       }
     }
   );
 
   server.registerTool(
-    "boond_settings_get",
+    'boond_settings_get',
     {
-      description: "Get a setting by ID",
+      description: 'Get a setting by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: settingIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = settingIdSchema.parse(params);
         const result = await client.searchSettings();
-        const setting = result.data.find((s) => s.id === validated.id);
+        const setting = result.data.find(s => s.id === validated.id);
 
         if (!setting) {
           return {
             content: [
               {
-                type: "text",
+                type: 'text',
                 text: `Setting not found`,
               },
             ],
@@ -89,37 +87,41 @@ export function registerSettingTools(
         const text = formatSetting(setting);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleToolError(error, "retrieving", "Setting");
+        return handleToolError(error, 'retrieving', 'Setting');
       }
     }
   );
 
   server.registerTool(
-    "boond_settings_update",
+    'boond_settings_update',
     {
-      description: "Update a setting by ID",
-      inputSchema: updateSettingWithIdSchema.shape,
+      description: 'Update a setting by ID',
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: updateSettingWithIdSchema.merge(dryRunSchema).shape,
     },
-    async (params) => {
+    async params => {
       try {
-        const validated = updateSettingWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateSettingWithIdSchema.merge(dryRunSchema).parse(params);
+        const { id, dryRun, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Setting', { id, ...updateData });
+        }
         const setting = await client.updateSetting(id, updateData);
         const text = formatSetting(setting);
 
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `Setting updated successfully!\n\n${text}`,
             },
           ],
         };
       } catch (error) {
-        return handleToolError(error, "updating", "Setting");
+        return handleToolError(error, 'updating', 'Setting');
       }
     }
   );

@@ -1,25 +1,27 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { BoondAPIClient } from "../../api/client.js";
-import { searchParamsSchema, appIdSchema } from "../../types/schemas.js";
-import type { App, SearchResponse } from "../../types/boond.js";
-import { handleSearchError, handleToolError } from "../../utils/error-handling.js";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { BoondAPIClient } from '../../api/client.js';
+import { searchParamsSchema, appIdSchema } from '../../types/schemas.js';
+import type { App, SearchResponse } from '../../types/boond.js';
+import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function formatAppList(result: SearchResponse<App>): string {
   if (result.data.length === 0) {
-    return "No apps found.";
+    return 'No apps found.';
   }
 
-  const apps = result.data.map((app) => {
+  const apps = result.data.map(app => {
     const lines: string[] = [];
     lines.push(`📦 ${app.name} (ID: ${app.id})`);
     if (app.type) lines.push(`   Type: ${app.type}`);
     if (app.status) lines.push(`   Status: ${app.status}`);
-    return lines.join("\n");
+    return lines.join('\n');
   });
 
   const summary = `Found ${result.data.length} app(s) (Page ${result.pagination.page}/${Math.ceil(result.pagination.total / result.pagination.limit)} of ${result.pagination.total} total)`;
 
-  return `${summary}\n\n${apps.join("\n\n")}`;
+  return `${summary}\n\n${apps.join('\n\n')}`;
 }
 
 function formatApp(app: App): string {
@@ -31,102 +33,109 @@ function formatApp(app: App): string {
   if (app.createdAt) lines.push(`Created: ${app.createdAt}`);
   if (app.updatedAt) lines.push(`Updated: ${app.updatedAt}`);
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
-export function registerAppTools(
-  server: McpServer,
-  client: BoondAPIClient
-): void {
+export function registerAppTools(server: McpServer, client: BoondAPIClient): void {
   server.registerTool(
-    "boond_apps_search",
+    'boond_apps_search',
     {
-      description: "Search apps by name or criteria",
+      description: 'Search apps by name or criteria',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchParamsSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = searchParamsSchema.parse(params);
         const result = await client.searchApps(validated);
         const text = formatAppList(result);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleSearchError(error, "apps");
+        return handleSearchError(error, 'apps');
       }
     }
   );
 
   server.registerTool(
-    "boond_apps_get",
+    'boond_apps_get',
     {
-      description: "Get an app by ID",
+      description: 'Get an app by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: appIdSchema.shape,
     },
-    async (params) => {
+    async params => {
       try {
         const validated = appIdSchema.parse(params);
         const app = await client.getApp(validated.id);
         const text = formatApp(app);
 
         return {
-          content: [{ type: "text", text }],
+          content: [{ type: 'text', text }],
         };
       } catch (error) {
-        return handleToolError(error, "retrieving", "App");
+        return handleToolError(error, 'retrieving', 'App');
       }
     }
   );
 
   server.registerTool(
-    "boond_apps_install",
+    'boond_apps_install',
     {
-      description: "Install an app by ID",
-      inputSchema: appIdSchema.shape,
+      description: 'Install an app by ID',
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: appIdSchema.merge(dryRunSchema).shape,
     },
-    async (params) => {
+    async params => {
       try {
-        const validated = appIdSchema.parse(params);
-        const app = await client.installApp(validated.id);
+        const { id, dryRun } = appIdSchema.merge(dryRunSchema).parse(params);
+        if (dryRun) {
+          return dryRunResponse('Install App', { id });
+        }
+        const app = await client.installApp(id);
         const text = formatApp(app);
 
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `App installed successfully!\n\n${text}`,
             },
           ],
         };
       } catch (error) {
-        return handleToolError(error, "installing", "App");
+        return handleToolError(error, 'installing', 'App');
       }
     }
   );
 
   server.registerTool(
-    "boond_apps_uninstall",
+    'boond_apps_uninstall',
     {
-      description: "Uninstall an app by ID",
-      inputSchema: appIdSchema.shape,
+      description: 'Uninstall an app by ID',
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: appIdSchema.merge(dryRunSchema).shape,
     },
-    async (params) => {
+    async params => {
       try {
-        const validated = appIdSchema.parse(params);
-        await client.uninstallApp(validated.id);
+        const { id, dryRun } = appIdSchema.merge(dryRunSchema).parse(params);
+        if (dryRun) {
+          return dryRunResponse('Uninstall App', { id });
+        }
+        await client.uninstallApp(id);
 
         return {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `App uninstalled successfully!`,
             },
           ],
         };
       } catch (error) {
-        return handleToolError(error, "uninstalling", "App");
+        return handleToolError(error, 'uninstalling', 'App');
       }
     }
   );
