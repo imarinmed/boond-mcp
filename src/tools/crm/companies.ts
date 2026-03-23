@@ -15,6 +15,8 @@ import {
 
 import type { BoondAPIClient } from '../../api/client.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS, READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 /**
  * Format company list for display
@@ -71,6 +73,7 @@ export function registerCompanyTools(server: McpServer, client: BoondAPIClient):
     {
       description: 'Search companies by name or criteria',
       inputSchema: searchParamsSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -95,6 +98,7 @@ export function registerCompanyTools(server: McpServer, client: BoondAPIClient):
     {
       description: 'Get a company by ID',
       inputSchema: companyIdSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -118,12 +122,19 @@ export function registerCompanyTools(server: McpServer, client: BoondAPIClient):
     'boond_companies_create',
     {
       description: 'Create a new company',
-      inputSchema: createCompanySchema.shape,
+      inputSchema: createCompanySchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = createCompanySchema.parse(params);
-        const company = await client.createCompany(validated);
+        const validated = createCompanySchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...companyData } = validated;
+
+        if (dryRun) {
+          return dryRunResponse('Create Company', { company: companyData });
+        }
+
+        const company = await client.createCompany(companyData);
         const text = formatCompany(company);
 
         return {
@@ -147,13 +158,23 @@ export function registerCompanyTools(server: McpServer, client: BoondAPIClient):
     'boond_companies_update',
     {
       description: 'Update an existing company',
-      inputSchema: updateCompanyWithIdSchema.shape,
+      inputSchema: updateCompanyWithIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const { id, ...updateData } = updateCompanyWithIdSchema.parse(params);
-        const validated = updateCompanySchema.parse(updateData);
-        const company = await client.updateCompany(id, validated);
+        const validated = updateCompanyWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+        const parsedUpdateData = updateCompanySchema.parse(updateData);
+
+        if (dryRun) {
+          return dryRunResponse('Update Company', {
+            id,
+            updates: parsedUpdateData,
+          });
+        }
+
+        const company = await client.updateCompany(id, parsedUpdateData);
         const text = formatCompany(company);
 
         return {
@@ -174,11 +195,17 @@ export function registerCompanyTools(server: McpServer, client: BoondAPIClient):
     'boond_companies_delete',
     {
       description: 'Delete a company by ID',
-      inputSchema: companyIdSchema.shape,
+      inputSchema: companyIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = companyIdSchema.parse(params);
+        const validated = companyIdSchema.merge(dryRunSchema).parse(params);
+
+        if (validated.dryRun) {
+          return dryRunResponse('Delete Company', { id: validated.id });
+        }
+
         await client.deleteCompany(validated.id);
         return {
           content: [

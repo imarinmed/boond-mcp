@@ -14,6 +14,8 @@ import {
 } from '../../types/schemas.js';
 
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS, READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 /**
  * Format quotation list for display
@@ -69,6 +71,7 @@ export function registerQuotationTools(server: McpServer, client: BoondAPIClient
     {
       description: 'Search quotations by criteria',
       inputSchema: searchParamsSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -93,6 +96,7 @@ export function registerQuotationTools(server: McpServer, client: BoondAPIClient
     {
       description: 'Get a quotation by ID',
       inputSchema: quotationIdSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -116,12 +120,21 @@ export function registerQuotationTools(server: McpServer, client: BoondAPIClient
     'boond_quotations_create',
     {
       description: 'Create a new quotation',
-      inputSchema: createQuotationSchema.shape,
+      inputSchema: createQuotationSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = createQuotationSchema.parse(params);
-        const quotation = await client.createQuotation(validated);
+        const validated = createQuotationSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...quotationData } = validated;
+
+        if (dryRun) {
+          return dryRunResponse('Create Quotation', {
+            quotation: quotationData,
+          });
+        }
+
+        const quotation = await client.createQuotation(quotationData);
         const text = formatQuotation(quotation);
 
         return {
@@ -145,11 +158,21 @@ export function registerQuotationTools(server: McpServer, client: BoondAPIClient
     'boond_quotations_update',
     {
       description: 'Update an existing quotation',
-      inputSchema: updateQuotationWithIdSchema.shape,
+      inputSchema: updateQuotationWithIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const { id, ...updateData } = updateQuotationWithIdSchema.parse(params);
+        const validated = updateQuotationWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+
+        if (dryRun) {
+          return dryRunResponse('Update Quotation', {
+            id,
+            updates: updateData,
+          });
+        }
+
         const quotation = await client.updateQuotation(id, updateData);
         const text = formatQuotation(quotation);
 
@@ -174,12 +197,19 @@ export function registerQuotationTools(server: McpServer, client: BoondAPIClient
     'boond_quotations_send',
     {
       description: 'Send a quotation',
-      inputSchema: quotationIdSchema.shape,
+      inputSchema: quotationIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = quotationIdSchema.parse(params);
-        const quotation = await client.sendQuotation(validated.id);
+        const validated = quotationIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...rest } = validated;
+
+        if (dryRun) {
+          return dryRunResponse('Send Quotation', { id: rest.id });
+        }
+
+        const quotation = await client.sendQuotation(rest.id);
         const text = formatQuotation(quotation);
 
         return {
@@ -200,11 +230,17 @@ export function registerQuotationTools(server: McpServer, client: BoondAPIClient
     'boond_quotations_delete',
     {
       description: 'Delete a quotation by ID',
-      inputSchema: quotationIdSchema.shape,
+      inputSchema: quotationIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = quotationIdSchema.parse(params);
+        const validated = quotationIdSchema.merge(dryRunSchema).parse(params);
+
+        if (validated.dryRun) {
+          return dryRunResponse('Delete Quotation', { id: validated.id });
+        }
+
         await client.deleteQuotation(validated.id);
         return {
           content: [

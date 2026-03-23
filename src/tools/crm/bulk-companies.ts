@@ -2,8 +2,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 const bulkCreateCompanySchema = z.object({
+  ...dryRunSchema.shape,
   companies: z
     .array(
       z.object({
@@ -19,6 +22,7 @@ const bulkCreateCompanySchema = z.object({
 });
 
 const bulkUpdateCompanySchema = z.object({
+  ...dryRunSchema.shape,
   updates: z
     .array(
       z.object({
@@ -35,6 +39,7 @@ const bulkUpdateCompanySchema = z.object({
 });
 
 const bulkDeleteCompanySchema = z.object({
+  ...dryRunSchema.shape,
   ids: z
     .array(z.string().min(1, 'Company ID is required'))
     .min(1, 'At least one ID is required')
@@ -47,11 +52,19 @@ export function registerBulkCreateCompanyTool(server: McpServer, client: BoondAP
     {
       description: 'Create multiple companies in a single operation (max 50)',
       inputSchema: bulkCreateCompanySchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkCreateCompanySchema.parse(params);
-        const { companies } = validated;
+        const { dryRun, companies } = validated;
+
+        if (dryRun) {
+          return dryRunResponse('Bulk Create Companies', {
+            count: companies.length,
+            items: companies,
+          });
+        }
 
         const results: Array<{
           success: boolean;
@@ -130,11 +143,19 @@ export function registerBulkUpdateCompanyTool(server: McpServer, client: BoondAP
     {
       description: 'Update multiple companies in a single operation (max 50)',
       inputSchema: bulkUpdateCompanySchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkUpdateCompanySchema.parse(params);
-        const { updates } = validated;
+        const { dryRun, updates } = validated;
+
+        if (dryRun) {
+          return dryRunResponse('Bulk Update Companies', {
+            count: updates.length,
+            items: updates,
+          });
+        }
 
         const results: Array<{
           success: boolean;
@@ -211,11 +232,19 @@ export function registerBulkDeleteCompanyTool(server: McpServer, client: BoondAP
       description:
         'Delete multiple companies in a single operation (max 50). Use with caution - this cannot be undone!',
       inputSchema: bulkDeleteCompanySchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
         const validated = bulkDeleteCompanySchema.parse(params);
-        const { ids } = validated;
+        const { dryRun, ids } = validated;
+
+        if (dryRun) {
+          return dryRunResponse('Bulk Delete Companies', {
+            count: ids.length,
+            ids,
+          });
+        }
 
         const results: Array<{
           success: boolean;

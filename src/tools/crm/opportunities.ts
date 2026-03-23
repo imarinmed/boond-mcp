@@ -14,6 +14,8 @@ import {
 } from '../../types/schemas.js';
 
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS, READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 /**
  * Format opportunity list for display
@@ -71,6 +73,7 @@ export function registerOpportunityTools(server: McpServer, client: BoondAPIClie
     {
       description: 'Search opportunities by name or criteria',
       inputSchema: searchParamsSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -95,6 +98,7 @@ export function registerOpportunityTools(server: McpServer, client: BoondAPIClie
     {
       description: 'Get an opportunity by ID',
       inputSchema: opportunityIdSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -118,12 +122,21 @@ export function registerOpportunityTools(server: McpServer, client: BoondAPIClie
     'boond_opportunities_create',
     {
       description: 'Create a new opportunity',
-      inputSchema: createOpportunitySchema.shape,
+      inputSchema: createOpportunitySchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = createOpportunitySchema.parse(params);
-        const opportunity = await client.createOpportunity(validated);
+        const validated = createOpportunitySchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...opportunityData } = validated;
+
+        if (dryRun) {
+          return dryRunResponse('Create Opportunity', {
+            opportunity: opportunityData,
+          });
+        }
+
+        const opportunity = await client.createOpportunity(opportunityData);
         const text = formatOpportunity(opportunity);
 
         return {
@@ -147,11 +160,21 @@ export function registerOpportunityTools(server: McpServer, client: BoondAPIClie
     'boond_opportunities_update',
     {
       description: 'Update an existing opportunity',
-      inputSchema: updateOpportunityWithIdSchema.shape,
+      inputSchema: updateOpportunityWithIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const { id, ...updateData } = updateOpportunityWithIdSchema.parse(params);
+        const validated = updateOpportunityWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+
+        if (dryRun) {
+          return dryRunResponse('Update Opportunity', {
+            id,
+            updates: updateData,
+          });
+        }
+
         const opportunity = await client.updateOpportunity(id, updateData);
         const text = formatOpportunity(opportunity);
 
@@ -173,11 +196,17 @@ export function registerOpportunityTools(server: McpServer, client: BoondAPIClie
     'boond_opportunities_delete',
     {
       description: 'Delete an opportunity by ID',
-      inputSchema: opportunityIdSchema.shape,
+      inputSchema: opportunityIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = opportunityIdSchema.parse(params);
+        const validated = opportunityIdSchema.merge(dryRunSchema).parse(params);
+
+        if (validated.dryRun) {
+          return dryRunResponse('Delete Opportunity', { id: validated.id });
+        }
+
         await client.deleteOpportunity(validated.id);
         return {
           content: [
