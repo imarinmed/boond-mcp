@@ -58,6 +58,7 @@ import {
   registerAppTools,
   registerSettingTools,
   registerAlertTools,
+  registerDictionaryTools,
   registerFullTextSearchTool,
   registerFacetedSearchTool,
   registerDateRangeSearchTool,
@@ -175,6 +176,7 @@ async function main(): Promise<void> {
     registerAppTools(server, apiClient);
     registerSettingTools(server, apiClient);
     registerAlertTools(server, apiClient);
+    registerDictionaryTools(server, apiClient);
     registerFullTextSearchTool(server, apiClient);
     registerFacetedSearchTool(server, apiClient);
     registerDateRangeSearchTool(server, apiClient);

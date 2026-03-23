@@ -529,4 +529,88 @@ describe('official GET/read endpoint reconciliation', () => {
       expect(firstCallOptions.method).toBe('GET');
     });
   });
+
+  describe('application dictionary (singular endpoint)', () => {
+    it('uses GET /application/dictionary for dictionary retrieval', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          meta: { version: '9.1.38.4', language: 'en' },
+          data: { setting: { action: { forceMultiCreation: true } } },
+        })
+      );
+
+      const client = new BoondAPIClient('test-token');
+      await client.getDictionary();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const firstCallUrl = String(fetchMock.mock.calls[0]?.[0]);
+      const firstCallOptions = fetchMock.mock.calls[0]?.[1] as { method?: string };
+      const requestUrl = new URL(firstCallUrl);
+
+      expect(requestUrl.pathname).toBe('/api/application/dictionary');
+      expect(firstCallOptions.method).toBe('GET');
+    });
+
+    it('passes language query param when provided', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          meta: { version: '9.1.38.4', language: 'fr' },
+          data: { setting: { action: {} } },
+        })
+      );
+
+      const client = new BoondAPIClient('test-token');
+      await client.getDictionary({ language: 'fr' });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const firstCallUrl = String(fetchMock.mock.calls[0]?.[0]);
+      const requestUrl = new URL(firstCallUrl);
+
+      expect(requestUrl.pathname).toBe('/api/application/dictionary');
+      expect(requestUrl.searchParams.get('language')).toBe('fr');
+    });
+
+    it('passes mergeAllLanguages query param when provided', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          meta: { version: '9.1.38.4', language: 'en' },
+          data: { setting: { action: {} } },
+        })
+      );
+
+      const client = new BoondAPIClient('test-token');
+      await client.getDictionary({ mergeAllLanguages: true });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const firstCallUrl = String(fetchMock.mock.calls[0]?.[0]);
+      const requestUrl = new URL(firstCallUrl);
+
+      expect(requestUrl.pathname).toBe('/api/application/dictionary');
+      expect(requestUrl.searchParams.get('mergeAllLanguages')).toBe('true');
+    });
+
+    it('passes both language and mergeAllLanguages params together', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          meta: { version: '9.1.38.4', language: 'es' },
+          data: { setting: { action: {} } },
+        })
+      );
+
+      const client = new BoondAPIClient('test-token');
+      await client.getDictionary({ language: 'es', mergeAllLanguages: true });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const firstCallUrl = String(fetchMock.mock.calls[0]?.[0]);
+      const requestUrl = new URL(firstCallUrl);
+
+      expect(requestUrl.pathname).toBe('/api/application/dictionary');
+      expect(requestUrl.searchParams.get('language')).toBe('es');
+      expect(requestUrl.searchParams.get('mergeAllLanguages')).toBe('true');
+    });
+  });
 });

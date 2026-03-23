@@ -47,6 +47,7 @@ export {
   registerAppTools,
   registerSettingTools,
   registerAlertTools,
+  registerDictionaryTools,
   registerFullTextSearchTool,
   registerFacetedSearchTool,
   registerDateRangeSearchTool,

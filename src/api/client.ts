@@ -717,7 +717,10 @@ export class BoondAPIClient {
   }
 
   async getCompanyContacts(id: string): Promise<SearchResponse<Contact>> {
-    return this.request<SearchResponse<Contact>>('GET', `/companies/${encodeURIComponent(id)}/contacts`);
+    return this.request<SearchResponse<Contact>>(
+      'GET',
+      `/companies/${encodeURIComponent(id)}/contacts`
+    );
   }
 
   async getCompanyDefault(): Promise<Company> {
@@ -946,7 +949,10 @@ export class BoondAPIClient {
   }
 
   async getResourceContracts(id: string): Promise<SearchResponse<Contract>> {
-    return this.request<SearchResponse<Contract>>('GET', `/resources/${encodeURIComponent(id)}/contracts`);
+    return this.request<SearchResponse<Contract>>(
+      'GET',
+      `/resources/${encodeURIComponent(id)}/contracts`
+    );
   }
 
   /**
@@ -1036,7 +1042,10 @@ export class BoondAPIClient {
   }
 
   async getProjectDeliveries(id: string): Promise<SearchResponse<Delivery>> {
-    return this.request<SearchResponse<Delivery>>('GET', `/projects/${encodeURIComponent(id)}/deliveries`);
+    return this.request<SearchResponse<Delivery>>(
+      'GET',
+      `/projects/${encodeURIComponent(id)}/deliveries`
+    );
   }
 
   async getProjectDefault(): Promise<Project> {
@@ -1852,6 +1861,25 @@ export class BoondAPIClient {
    */
   async searchSettings(): Promise<SearchResponse<Setting>> {
     return this.request<SearchResponse<Setting>>('GET', '/application/settings');
+  }
+
+  /**
+   * Get application dictionary
+   */
+  async getDictionary(params?: {
+    language?: 'fr' | 'en' | 'es';
+    mergeAllLanguages?: boolean;
+  }): Promise<{ meta: Record<string, unknown>; data: { setting: Record<string, unknown> } }> {
+    const query = new URLSearchParams();
+    if (params?.language) {
+      query.set('language', params.language);
+    }
+    if (params?.mergeAllLanguages !== undefined) {
+      query.set('mergeAllLanguages', String(params.mergeAllLanguages));
+    }
+    const qs = query.toString();
+    const path = qs ? `/application/dictionary?${qs}` : '/application/dictionary';
+    return this.request<{ meta: Record<string, unknown>; data: { setting: Record<string, unknown> } }>('GET', path);
   }
 
   /**
