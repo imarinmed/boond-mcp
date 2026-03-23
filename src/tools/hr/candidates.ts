@@ -12,6 +12,8 @@ import {
 } from '../../types/schemas.js';
 import type { Candidate, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS, READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 import { ValidationError } from '../../api/client.js';
 
 function pickCandidateName(candidate: Candidate): string {
@@ -114,6 +116,7 @@ export function registerCandidateTools(server: McpServer, client: BoondAPIClient
     {
       description: 'Search candidates by name, email, or other criteria',
       inputSchema: searchParamsSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -138,6 +141,7 @@ export function registerCandidateTools(server: McpServer, client: BoondAPIClient
     {
       description: 'Get a candidate by ID',
       inputSchema: candidateIdSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -161,12 +165,17 @@ export function registerCandidateTools(server: McpServer, client: BoondAPIClient
     'boond_candidates_create',
     {
       description: 'Create a new candidate',
-      inputSchema: createCandidateSchema.shape,
+      inputSchema: createCandidateSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = createCandidateSchema.parse(params);
-        const candidate = await client.createCandidate(validated);
+        const validated = createCandidateSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Candidate', data);
+        }
+        const candidate = await client.createCandidate(data);
         const text = formatCandidate(candidate);
 
         return {
@@ -190,12 +199,16 @@ export function registerCandidateTools(server: McpServer, client: BoondAPIClient
     'boond_candidates_update',
     {
       description: 'Update an existing candidate',
-      inputSchema: updateCandidateWithIdSchema.shape,
+      inputSchema: updateCandidateWithIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = updateCandidateWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateCandidateWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Candidate', { id, ...updateData });
+        }
 
         if (!id) {
           throw new ValidationError('Candidate ID is required');
@@ -225,17 +238,22 @@ export function registerCandidateTools(server: McpServer, client: BoondAPIClient
     'boond_candidates_delete',
     {
       description: 'Delete a candidate by ID',
-      inputSchema: candidateIdSchema.shape,
+      inputSchema: candidateIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = candidateIdSchema.parse(params);
-        await client.deleteCandidate(validated.id);
+        const validated = candidateIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Delete Candidate', { id: rest.id });
+        }
+        await client.deleteCandidate(rest.id);
         return {
           content: [
             {
               type: 'text',
-              text: `Candidate ${validated.id} deleted successfully.`,
+              text: `Candidate ${rest.id} deleted successfully.`,
             },
           ],
         };

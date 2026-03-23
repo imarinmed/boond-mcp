@@ -12,6 +12,8 @@ import {
 } from '../../types/schemas.js';
 import type { Contact, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS, READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 import { ValidationError } from '../../api/client.js';
 
 function pickContactName(contact: Contact): string {
@@ -109,6 +111,7 @@ export function registerContactTools(server: McpServer, client: BoondAPIClient):
     {
       description: 'Search contacts by name, email, or other criteria',
       inputSchema: searchParamsSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -133,6 +136,7 @@ export function registerContactTools(server: McpServer, client: BoondAPIClient):
     {
       description: 'Get a contact by ID',
       inputSchema: contactIdSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -156,12 +160,17 @@ export function registerContactTools(server: McpServer, client: BoondAPIClient):
     'boond_contacts_create',
     {
       description: 'Create a new contact',
-      inputSchema: createContactSchema.shape,
+      inputSchema: createContactSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = createContactSchema.parse(params);
-        const contact = await client.createContact(validated);
+        const validated = createContactSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Contact', data);
+        }
+        const contact = await client.createContact(data);
         const text = formatContact(contact);
 
         return {
@@ -185,12 +194,16 @@ export function registerContactTools(server: McpServer, client: BoondAPIClient):
     'boond_contacts_update',
     {
       description: 'Update an existing contact',
-      inputSchema: updateContactWithIdSchema.shape,
+      inputSchema: updateContactWithIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = updateContactWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateContactWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Contact', { id, ...updateData });
+        }
 
         if (!id) {
           throw new ValidationError('Contact ID is required');
@@ -220,17 +233,22 @@ export function registerContactTools(server: McpServer, client: BoondAPIClient):
     'boond_contacts_delete',
     {
       description: 'Delete a contact by ID',
-      inputSchema: contactIdSchema.shape,
+      inputSchema: contactIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = contactIdSchema.parse(params);
-        await client.deleteContact(validated.id);
+        const validated = contactIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Delete Contact', { id: rest.id });
+        }
+        await client.deleteContact(rest.id);
         return {
           content: [
             {
               type: 'text',
-              text: `Contact ${validated.id} deleted successfully.`,
+              text: `Contact ${rest.id} deleted successfully.`,
             },
           ],
         };

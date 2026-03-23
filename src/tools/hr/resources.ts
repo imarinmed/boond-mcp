@@ -12,6 +12,8 @@ import {
 } from '../../types/schemas.js';
 import type { Resource, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS, READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 import { ValidationError } from '../../api/client.js';
 
 function pickString(record: Record<string, unknown>, keys: string[]): string | undefined {
@@ -117,6 +119,7 @@ export function registerResourceTools(server: McpServer, client: BoondAPIClient)
     {
       description: 'Search resources by name, email, or other criteria',
       inputSchema: searchParamsSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -141,6 +144,7 @@ export function registerResourceTools(server: McpServer, client: BoondAPIClient)
     {
       description: 'Get a resource by ID',
       inputSchema: resourceIdSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -164,12 +168,17 @@ export function registerResourceTools(server: McpServer, client: BoondAPIClient)
     'boond_resources_create',
     {
       description: 'Create a new resource',
-      inputSchema: createResourceSchema.shape,
+      inputSchema: createResourceSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = createResourceSchema.parse(params);
-        const resource = await client.createResource(validated);
+        const validated = createResourceSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Resource', data);
+        }
+        const resource = await client.createResource(data);
         const text = formatResource(resource);
 
         return {
@@ -193,12 +202,16 @@ export function registerResourceTools(server: McpServer, client: BoondAPIClient)
     'boond_resources_update',
     {
       description: 'Update an existing resource',
-      inputSchema: updateResourceWithIdSchema.shape,
+      inputSchema: updateResourceWithIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = updateResourceWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateResourceWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Resource', { id, ...updateData });
+        }
 
         if (!id) {
           throw new ValidationError('Resource ID is required');
@@ -225,17 +238,22 @@ export function registerResourceTools(server: McpServer, client: BoondAPIClient)
     'boond_resources_delete',
     {
       description: 'Delete a resource by ID',
-      inputSchema: resourceIdSchema.shape,
+      inputSchema: resourceIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = resourceIdSchema.parse(params);
-        await client.deleteResource(validated.id);
+        const validated = resourceIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Delete Resource', { id: rest.id });
+        }
+        await client.deleteResource(rest.id);
         return {
           content: [
             {
               type: 'text',
-              text: `Resource ${validated.id} deleted successfully.`,
+              text: `Resource ${rest.id} deleted successfully.`,
             },
           ],
         };

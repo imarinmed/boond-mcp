@@ -12,6 +12,8 @@ import {
 } from '../../types/schemas.js';
 import type { Contract, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { WRITE_TOOL_ANNOTATIONS, READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 import { ValidationError } from '../../api/client.js';
 
 function pickContractResource(contract: Contract): string {
@@ -116,6 +118,7 @@ export function registerContractTools(server: McpServer, client: BoondAPIClient)
     {
       description: 'List contracts with pagination only (page, limit)',
       inputSchema: contractSearchParamsSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -140,6 +143,7 @@ export function registerContractTools(server: McpServer, client: BoondAPIClient)
     {
       description: 'Get a contract by ID',
       inputSchema: contractIdSchema.shape,
+      annotations: READ_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
@@ -163,12 +167,17 @@ export function registerContractTools(server: McpServer, client: BoondAPIClient)
     'boond_contracts_create',
     {
       description: 'Create a new contract',
-      inputSchema: createContractSchema.shape,
+      inputSchema: createContractSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = createContractSchema.parse(params);
-        const contract = await client.createContract(validated);
+        const validated = createContractSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Contract', data);
+        }
+        const contract = await client.createContract(data);
         const text = formatContract(contract);
 
         return {
@@ -192,12 +201,16 @@ export function registerContractTools(server: McpServer, client: BoondAPIClient)
     'boond_contracts_update',
     {
       description: 'Update an existing contract',
-      inputSchema: updateContractWithIdSchema.shape,
+      inputSchema: updateContractWithIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = updateContractWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateContractWithIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, id, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Contract', { id, ...updateData });
+        }
 
         if (!id) {
           throw new ValidationError('Contract ID is required');
@@ -224,17 +237,22 @@ export function registerContractTools(server: McpServer, client: BoondAPIClient)
     'boond_contracts_delete',
     {
       description: 'Delete a contract by ID',
-      inputSchema: contractIdSchema.shape,
+      inputSchema: contractIdSchema.merge(dryRunSchema).shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
     },
     async params => {
       try {
-        const validated = contractIdSchema.parse(params);
-        await client.deleteContract(validated.id);
+        const validated = contractIdSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...rest } = validated;
+        if (dryRun) {
+          return dryRunResponse('Delete Contract', { id: rest.id });
+        }
+        await client.deleteContract(rest.id);
         return {
           content: [
             {
               type: 'text',
-              text: `Contract ${validated.id} deleted successfully.`,
+              text: `Contract ${rest.id} deleted successfully.`,
             },
           ],
         };
