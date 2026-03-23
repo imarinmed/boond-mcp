@@ -15,6 +15,8 @@ import {
   readString,
   formatUnknownWithDebug,
 } from '../../utils/normalization.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function toDocumentRecord(doc: Document): Record<string, unknown> {
   return doc as unknown as Record<string, unknown>;
@@ -86,6 +88,7 @@ export function registerDocumentTools(server: McpServer, client: BoondAPIClient)
     'boond_documents_search',
     {
       description: 'Deprecated: global documents search is not supported by Boond API',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchParamsSchema.shape,
     },
     async params => {
@@ -107,6 +110,7 @@ export function registerDocumentTools(server: McpServer, client: BoondAPIClient)
     'boond_documents_get',
     {
       description: 'Get a document by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: documentIdSchema.shape,
     },
     async params => {
@@ -128,12 +132,16 @@ export function registerDocumentTools(server: McpServer, client: BoondAPIClient)
     'boond_documents_update',
     {
       description: 'Update document metadata (name, folder)',
-      inputSchema: updateDocumentWithIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: updateDocumentWithIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = updateDocumentWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateDocumentWithIdSchema.merge(dryRunSchema).parse(params);
+        const { id, dryRun, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Document', { id, ...updateData });
+        }
         const doc = await client.updateDocument(id, updateData);
         const text = formatDocument(doc);
 
@@ -155,6 +163,7 @@ export function registerDocumentTools(server: McpServer, client: BoondAPIClient)
     'boond_documents_download',
     {
       description: 'Get document download URL',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: documentIdSchema.shape,
     },
     async params => {
