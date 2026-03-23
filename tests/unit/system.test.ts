@@ -100,4 +100,32 @@ describe('System Domain Tools', () => {
       expect(result.data.length).toBeGreaterThan(0);
     });
   });
+
+  describe('Flags', () => {
+    it('should search flags', async () => {
+      const result = await mockClient.searchFlags({ page: 1, limit: 5 });
+      expect(result.data).toHaveLength(5);
+      expect(result.data[0].name).toBeDefined();
+    });
+
+    it('should get flag by id', async () => {
+      const result = await mockClient.getFlag('flag-123');
+      expect(result.id).toBe('flag-123');
+      expect(result.name).toBeDefined();
+    });
+  });
+
+  describe('Perimeters', () => {
+    it('should get default perimeter configuration', async () => {
+      const result = await mockClient.getPerimeters();
+      expect(result.id).toBeDefined();
+      expect(result.name).toBeDefined();
+    });
+
+    it('should get perimeter configuration for a module', async () => {
+      const result = await mockClient.getPerimeters({ module: 'resources' });
+      expect(result.id).toBeDefined();
+      expect(result.module).toBe('resources');
+    });
+  });
 });

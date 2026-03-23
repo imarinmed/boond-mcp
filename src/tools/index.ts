@@ -48,6 +48,8 @@ export {
   registerSettingTools,
   registerAlertTools,
   registerDictionaryTools,
+  registerFlagTools,
+  registerPerimeterTools,
   registerFullTextSearchTool,
   registerFacetedSearchTool,
   registerDateRangeSearchTool,

@@ -24,6 +24,8 @@ import type {
   App,
   Setting,
   Alert,
+  Flag,
+  Perimeter,
   SearchResponse,
 } from '../../src/types/boond.js';
 
@@ -344,6 +346,28 @@ export const mockAlert = (overrides?: Partial<Alert>): Alert => ({
   message: 'A new candidate has applied',
   severity: 'low',
   createdAt: generateDate(),
+  ...overrides,
+});
+
+export const mockFlag = (overrides?: Partial<Flag>): Flag => ({
+  id: generateId(),
+  name: 'Important',
+  color: '#FF0000',
+  createdAt: generateDate(),
+  updatedAt: generateDate(),
+  ...overrides,
+});
+
+export const mockPerimeter = (overrides?: Partial<Perimeter>): Perimeter => ({
+  id: generateId(),
+  name: 'Default Perimeter',
+  module: 'resources',
+  required: true,
+  allManagerTypes: false,
+  allAgencies: true,
+  resourceTypes: [],
+  createdAt: generateDate(),
+  updatedAt: generateDate(),
   ...overrides,
 });
 
@@ -1457,6 +1481,35 @@ export class MockBoondAPIClient {
     await this.simulateDelay();
     this.maybeThrow();
     return createSearchResponse([mockTimeReport(), mockAbsence()], params.page, params.limit);
+  }
+
+  async searchFlags(params: {
+    query?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<SearchResponse<Flag>> {
+    this.recordCall('searchFlags', [params]);
+    await this.simulateDelay();
+    this.maybeThrow();
+    return createSearchResponse(
+      Array.from({ length: 5 }, () => mockFlag()),
+      params.page,
+      params.limit
+    );
+  }
+
+  async getFlag(id: string): Promise<Flag> {
+    this.recordCall('getFlag', [id]);
+    await this.simulateDelay();
+    this.maybeThrow();
+    return mockFlag({ id });
+  }
+
+  async getPerimeters(params?: { module?: string }): Promise<Perimeter> {
+    this.recordCall('getPerimeters', [params]);
+    await this.simulateDelay();
+    this.maybeThrow();
+    return mockPerimeter(params);
   }
 }
 

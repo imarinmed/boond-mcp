@@ -482,6 +482,14 @@ export const updateAlertWithIdSchema = z.object({
   ...updateAlertSchema.shape,
 });
 
+export const flagIdSchema = z.object({
+  id: z.string().min(1, 'Flag ID is required'),
+});
+
+export const perimeterParamsSchema = z.object({
+  module: z.string().optional().describe('Filter perimeters by module (e.g., "resources", "candidates", "companies")'),
+});
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================

@@ -460,3 +460,31 @@ export interface Alert {
   createdAt: string;
   resolvedAt?: string;
 }
+
+/**
+ * Flag resource - System domain
+ * Used for categorizing/tagging entities across the system
+ */
+export interface Flag {
+  id: string;
+  name: string;
+  color?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Perimeter resource - System domain
+ * Defines access boundaries and management scopes
+ */
+export interface Perimeter {
+  id: string;
+  name: string;
+  module?: string;
+  required?: boolean;
+  allManagerTypes?: boolean;
+  allAgencies?: boolean;
+  resourceTypes?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}

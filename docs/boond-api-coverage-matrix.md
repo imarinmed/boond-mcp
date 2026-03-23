@@ -75,6 +75,11 @@ Primary source: `https://doc.boondmanager.com/api-externe/raml-build/api-externe
 | GET    | `/times-reports/{id}`                         | `resources/timesReports/profile.raml`        | yes        | yes         | yes              | no        | no                     | no                        | `boond_timereports_get`             | Official profile endpoint.                                                                                         |
 
 | GET | `/application/dictionary` | `resources/application/dictionary.raml` | yes | yes | yes | no | no | no | `boond_dictionary_get` | Singular dictionary endpoint returning all configurable lookup values. Validated live 2026-03-23 → HTTP 200. Supports `?language=fr\|en\|es` and `?mergeAllLanguages=true` query params. Replaces 12 previously assumed per-type routes (all returned 404). |
+| GET | `/application/flags` | `resources/application/flags.raml` | yes | no | yes | no | no | yes | `_deferred_` | Live endpoint returns useful flag data, but standalone `/flags` + `/flags/{id}` provide the richer public MCP surface for Task 8. Kept intentionally not exposed to avoid redundant tools. |
+| GET | `/application/perimeters` | `resources/application/perimeters.raml` | yes | yes | yes | no | no | no | `boond_perimeters_get` | Aggregate perimeter/reference catalog endpoint. Validated live 2026-03-23 → HTTP 200. Supports optional `?module=...` query param (e.g. `resources`). |
+| GET | `/application/status` | `resources/application/status.raml` | yes | no | yes | no | no | yes | `_deferred_` | Live endpoint returns only `meta` and no useful `data` payload for this tenant, so it is validated but intentionally not exposed as an MCP catalog tool. |
+| GET | `/flags` | `resources/flags/search.raml` | yes | yes | yes | no | no | no | `boond_flags_search` | Standalone flag search/list endpoint. Validated live 2026-03-23 → HTTP 200 and returns richer data than `/application/flags`, including permission-related fields. |
+| GET | `/flags/{id}` | `resources/flags/profile.raml` | yes | yes | yes | no | no | no | `boond_flags_get` | Standalone flag profile endpoint. Validated live 2026-03-23 → HTTP 200. |
 
 ## Read Tools Without a Single Official Endpoint Mapping
 

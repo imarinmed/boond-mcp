@@ -55,6 +55,9 @@ import {
   registerAppTools,
   registerSettingTools,
   registerAlertTools,
+  registerDictionaryTools,
+  registerFlagTools,
+  registerPerimeterTools,
   registerFullTextSearchTool,
   registerFacetedSearchTool,
   registerDateRangeSearchTool,
@@ -690,7 +693,7 @@ describe('7. Documents Domain - Tool Registrations', () => {
 });
 
 /**
- * SECTION 8: System Domain Tools (10 tools)
+ * SECTION 8: System Domain Tools (14 tools)
  */
 describe('8. System Domain - Tool Registrations', () => {
   let mockServer: MockMcpServer;
@@ -763,6 +766,61 @@ describe('8. System Domain - Tool Registrations', () => {
       expect(toolNames).toContain('boond_alerts_update');
     });
   });
+
+  describe('Dictionary Tools', () => {
+    it('should register 1 dictionary tool', () => {
+      registerDictionaryTools(mockServer as any, mockClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      expect(calls.length).toBe(1);
+    });
+
+    it('should register boond_dictionary_get', () => {
+      registerDictionaryTools(mockServer as any, mockClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      const toolNames = calls.map((call: any[]) => call[0]);
+
+      expect(toolNames).toContain('boond_dictionary_get');
+    });
+  });
+
+  describe('Flags Tools', () => {
+    it('should register 2 flag tools', () => {
+      registerFlagTools(mockServer as any, mockClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      expect(calls.length).toBe(2);
+    });
+
+    it('should have flag tools: search, get', () => {
+      registerFlagTools(mockServer as any, mockClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      const toolNames = calls.map((call: any[]) => call[0]);
+
+      expect(toolNames).toContain('boond_flags_search');
+      expect(toolNames).toContain('boond_flags_get');
+    });
+  });
+
+  describe('Perimeters Tools', () => {
+    it('should register 1 perimeter tool', () => {
+      registerPerimeterTools(mockServer as any, mockClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      expect(calls.length).toBe(1);
+    });
+
+    it('should register boond_perimeters_get', () => {
+      registerPerimeterTools(mockServer as any, mockClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      const toolNames = calls.map((call: any[]) => call[0]);
+
+      expect(toolNames).toContain('boond_perimeters_get');
+    });
+  });
 });
 
 /**
@@ -779,7 +837,7 @@ describe('9. Total Tool Count Verification', () => {
     mockClient = new BoondAPIClient('test-token');
   });
 
-  it('should register total of 121 tools across all domains', () => {
+  it('should register total of 125 tools across all domains', () => {
     registerCandidateTools(mockServer as any, mockClient);
     registerContactTools(mockServer as any, mockClient);
     registerResourceTools(mockServer as any, mockClient);
@@ -816,13 +874,16 @@ describe('9. Total Tool Count Verification', () => {
     registerAppTools(mockServer as any, mockClient);
     registerSettingTools(mockServer as any, mockClient);
     registerAlertTools(mockServer as any, mockClient);
+    registerDictionaryTools(mockServer as any, mockClient);
+    registerFlagTools(mockServer as any, mockClient);
+    registerPerimeterTools(mockServer as any, mockClient);
     registerFullTextSearchTool(mockServer as any, mockClient);
     registerFacetedSearchTool(mockServer as any, mockClient);
     registerDateRangeSearchTool(mockServer as any, mockClient);
     registerAdvancedSearchTool(mockServer as any, mockClient);
 
     const totalCalls = mockServer.registerTool.mock.calls.length;
-    expect(totalCalls).toBe(121);
+    expect(totalCalls).toBe(125);
   });
 
   it('should verify all tools have descriptions', () => {

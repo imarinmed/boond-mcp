@@ -39,6 +39,8 @@ import type {
   Setting,
   Alert,
   Contract,
+  Flag,
+  Perimeter,
 } from '../types/boond.js';
 import type {
   SearchParams,
@@ -1879,7 +1881,10 @@ export class BoondAPIClient {
     }
     const qs = query.toString();
     const path = qs ? `/application/dictionary?${qs}` : '/application/dictionary';
-    return this.request<{ meta: Record<string, unknown>; data: { setting: Record<string, unknown> } }>('GET', path);
+    return this.request<{
+      meta: Record<string, unknown>;
+      data: { setting: Record<string, unknown> };
+    }>('GET', path);
   }
 
   /**
@@ -1914,5 +1919,47 @@ export class BoondAPIClient {
    */
   async updateAlert(id: string, data: { resolved?: boolean }): Promise<Alert> {
     return this.request<Alert>('PUT', `/alerts/${encodeURIComponent(id)}`, data);
+  }
+
+  // ============================================================================
+  // FLAGS DOMAIN (Task 8)
+  // ============================================================================
+
+  /**
+   * Search flags
+   */
+  async searchFlags(params: SearchParams): Promise<SearchResponse<Flag>> {
+    const query = new URLSearchParams({
+      ...(params.query && { query: params.query }),
+      page: String(params.page),
+      limit: String(Math.min(params.limit, 100)),
+    });
+
+    return this.request<SearchResponse<Flag>>('GET', `/flags?${query.toString()}`);
+  }
+
+  /**
+   * Get flag by ID
+   */
+  async getFlag(id: string): Promise<Flag> {
+    return this.request<Flag>('GET', `/flags/${encodeURIComponent(id)}`);
+  }
+
+  // ============================================================================
+  // PERIMETERS DOMAIN (Task 8)
+  // ============================================================================
+
+  /**
+   * Get application perimeters
+   * Returns perimeter configuration, optionally filtered by module
+   */
+  async getPerimeters(params?: { module?: string }): Promise<Perimeter> {
+    const query = new URLSearchParams();
+    if (params?.module) {
+      query.set('module', params.module);
+    }
+    const qs = query.toString();
+    const path = qs ? `/application/perimeters?${qs}` : '/application/perimeters';
+    return this.request<Perimeter>('GET', path);
   }
 }
