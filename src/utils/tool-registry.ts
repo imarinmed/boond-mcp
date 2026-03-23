@@ -1,10 +1,22 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult, ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
+
+export const WRITE_TOOL_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  openWorldHint: false,
+} as const;
+
+export const READ_TOOL_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+} as const;
 
 export interface ToolHandler {
   name: string;
   description: string;
   inputSchema: unknown;
+  annotations?: ToolAnnotations;
   handler: (args: Record<string, unknown>) => Promise<CallToolResult>;
 }
 
@@ -17,15 +29,29 @@ const toolRegistry = new Map<string, ToolHandler>();
 export function applyToolRegistry(server: McpServer): void {
   const originalRegisterTool = server.registerTool.bind(server);
 
-  const wrappedRegisterTool = ((name: string, config: unknown, callback: unknown) => {
+  const wrappedRegisterTool = ((
+    name: string,
+    config: {
+      description?: string;
+      inputSchema?: unknown;
+      annotations?: ToolAnnotations;
+    },
+    callback: (args: Record<string, unknown>) => Promise<CallToolResult>
+  ) => {
     // Store in registry for HTTP access
-    const configObj = config as { description?: string; inputSchema?: unknown };
-    toolRegistry.set(name, {
+    const configObj = config;
+    const toolEntry: ToolHandler = {
       name,
       description: configObj.description || '',
       inputSchema: configObj.inputSchema,
-      handler: callback as (args: Record<string, unknown>) => Promise<CallToolResult>,
-    });
+      handler: callback,
+    };
+
+    if (configObj.annotations) {
+      toolEntry.annotations = configObj.annotations;
+    }
+
+    toolRegistry.set(name, toolEntry);
 
     // Call original registerTool (3 arguments: name, config, callback)
     return originalRegisterTool(name, config as never, callback as never);
