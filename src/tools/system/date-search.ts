@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { handleSearchError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
 
 function readString(record: Record<string, unknown>, keys: string[]): string | undefined {
   for (const key of keys) {
@@ -121,6 +122,7 @@ export function registerDateRangeSearchTool(server: McpServer, client: BoondAPIC
     {
       description:
         'Search entities within a specific date range (YYYY-MM-DD format). Supports time reports, absences, and projects.',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: dateRangeSearchSchema.shape,
     },
     async params => {

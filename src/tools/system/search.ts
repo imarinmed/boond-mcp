@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { handleSearchError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
 
 const fullTextSearchSchema = z.object({
   query: z.string().min(1, 'Search query is required'),
@@ -19,6 +20,7 @@ export function registerFullTextSearchTool(server: McpServer, client: BoondAPICl
     'boond_fulltext_search',
     {
       description: 'Perform full-text search across multiple entity types',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: fullTextSearchSchema.shape,
     },
     async params => {

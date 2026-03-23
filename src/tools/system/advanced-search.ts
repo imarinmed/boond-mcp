@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { handleSearchError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
 
 const advancedSearchSchema = z.object({
   entity: z.enum(['candidates', 'companies', 'contacts', 'resources', 'projects']),
@@ -17,6 +18,7 @@ export function registerAdvancedSearchTool(server: McpServer, client: BoondAPICl
     {
       description:
         'Search entities by specific field values (email, phone, city, country, status, type)',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: advancedSearchSchema.shape,
     },
     async params => {

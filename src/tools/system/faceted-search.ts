@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { handleSearchError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
 
 const facetedSearchSchema = z.object({
   entity: z.enum(['candidates', 'companies', 'contacts', 'resources', 'projects', 'opportunities']),
@@ -16,6 +17,7 @@ export function registerFacetedSearchTool(server: McpServer, client: BoondAPICli
     'boond_faceted_search',
     {
       description: 'Perform faceted search with filter criteria on specific entity type',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: facetedSearchSchema.shape,
     },
     async params => {

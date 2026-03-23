@@ -3,6 +3,7 @@ import type { BoondAPIClient } from '../../api/client.js';
 import { z } from 'zod';
 import { classifyError } from '../../utils/error-classification.js';
 import { handleSearchError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
 
 const capabilitiesProbeSchema = z.object({
   limit: z.number().int().min(1).max(5).default(1),
@@ -77,6 +78,7 @@ export function registerCapabilitiesProbeTool(server: McpServer, client: BoondAP
     {
       description:
         'Probe effective Boond API capabilities/scopes by testing representative read endpoints and classifying outcomes (ok/forbidden/not_available/method_mismatch/validation)',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: capabilitiesProbeSchema.shape,
     },
     async params => {
