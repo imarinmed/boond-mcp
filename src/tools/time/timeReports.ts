@@ -7,6 +7,8 @@ import {
 } from '../../types/schemas.js';
 import type { TimeReport, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function firstDefined<T>(...values: Array<T | undefined | null>): T | undefined {
   return values.find(value => value !== undefined && value !== null) as T | undefined;
@@ -233,6 +235,7 @@ export function registerTimeReportTools(server: McpServer, client: BoondAPIClien
     'boond_timereports_search',
     {
       description: 'Search time reports by resource, date range, or status',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchTimeReportsSchema.shape,
     },
     async params => {
@@ -256,6 +259,7 @@ export function registerTimeReportTools(server: McpServer, client: BoondAPIClien
     'boond_timereports_get',
     {
       description: 'Get a time report by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: timeReportIdSchema.shape,
     },
     async params => {
@@ -277,12 +281,17 @@ export function registerTimeReportTools(server: McpServer, client: BoondAPIClien
     'boond_timereports_create',
     {
       description: 'Create a new time report',
-      inputSchema: createTimeReportSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: createTimeReportSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = createTimeReportSchema.parse(params);
-        const report = await client.createTimeReport(validated);
+        const validated = createTimeReportSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Time Report', data);
+        }
+        const report = await client.createTimeReport(data);
         const text = formatTimeReport(report);
 
         return {

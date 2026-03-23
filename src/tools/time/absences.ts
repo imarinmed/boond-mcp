@@ -18,6 +18,8 @@ import {
   normalizeAbsence,
   isFieldUnknown,
 } from '../../utils/normalization.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 type DisplayAbsence = {
   id: string;
@@ -154,6 +156,7 @@ export function registerAbsenceTools(server: McpServer, client: BoondAPIClient):
     'boond_absences_search',
     {
       description: 'Search absences by resource, date range, status, or type',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchAbsencesSchema.shape,
     },
     async params => {
@@ -185,6 +188,7 @@ export function registerAbsenceTools(server: McpServer, client: BoondAPIClient):
     'boond_absences_get',
     {
       description: 'Get an absence by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: absenceIdSchema.shape,
     },
     async params => {
@@ -224,12 +228,17 @@ export function registerAbsenceTools(server: McpServer, client: BoondAPIClient):
     'boond_absences_create',
     {
       description: 'Create a new absence',
-      inputSchema: createAbsenceSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: createAbsenceSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = createAbsenceSchema.parse(params);
-        const absence = await client.createAbsence(validated);
+        const validated = createAbsenceSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Absence', data);
+        }
+        const absence = await client.createAbsence(data);
         const text = formatAbsence(absence);
 
         return {
@@ -250,12 +259,16 @@ export function registerAbsenceTools(server: McpServer, client: BoondAPIClient):
     'boond_absences_update',
     {
       description: 'Update an existing absence',
-      inputSchema: updateAbsenceWithIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: updateAbsenceWithIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = updateAbsenceWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateAbsenceWithIdSchema.merge(dryRunSchema).parse(params);
+        const { id, dryRun, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Absence', { id, ...updateData });
+        }
         const absence = await client.updateAbsence(id, updateData);
         const text = formatAbsence(absence);
 

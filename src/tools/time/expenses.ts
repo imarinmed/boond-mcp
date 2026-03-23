@@ -11,6 +11,8 @@ import type { ExpenseReport, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { enrichItemsWithDetails } from '../../utils/enrichment.js';
 import { readNumber, readString, formatUnknownWithDebug } from '../../utils/normalization.js';
+import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
+import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
 
 function formatDate(value: string | undefined): string {
   if (!value) return 'unknown';
@@ -66,11 +68,11 @@ function normalizeExpenseReport(report: ExpenseReport): {
       ? formatUnknownWithDebug('resourceId', [resourceIdValue])
       : String(resourceIdValue);
 
-   return {
-     id: report.id,
-     resourceId,
-     periodStart: periodStart || 'unknown',
-     periodEnd: periodEnd || 'unknown',
+  return {
+    id: report.id,
+    resourceId,
+    periodStart: periodStart || 'unknown',
+    periodEnd: periodEnd || 'unknown',
     total: totalNum !== undefined ? String(totalNum) : String(report.total ?? 'unknown'),
     status,
     ...(report.createdAt ? { createdAt: report.createdAt } : {}),
@@ -80,15 +82,15 @@ function normalizeExpenseReport(report: ExpenseReport): {
 }
 
 function shouldEnrichExpenseReport(report: ExpenseReport): boolean {
-   const normalized = normalizeExpenseReport(report);
-   return (
-     normalized.resourceId === 'unknown' ||
-     normalized.periodStart === 'unknown' ||
-     normalized.periodEnd === 'unknown' ||
-     normalized.total === 'unknown' ||
-     normalized.status === 'unknown'
-   );
- }
+  const normalized = normalizeExpenseReport(report);
+  return (
+    normalized.resourceId === 'unknown' ||
+    normalized.periodStart === 'unknown' ||
+    normalized.periodEnd === 'unknown' ||
+    normalized.total === 'unknown' ||
+    normalized.status === 'unknown'
+  );
+}
 
 function formatExpenseReportList(result: SearchResponse<ExpenseReport>): string {
   if (!result.data || result.data.length === 0) {
@@ -121,12 +123,12 @@ function formatExpenseReport(report: ExpenseReport): string {
   const normalized = normalizeExpenseReport(report);
   const startDate = formatDate(normalized.periodStart);
   const endDate = formatDate(normalized.periodEnd);
-   const created = normalized.createdAt
-     ? new Date(normalized.createdAt).toLocaleString()
-     : 'unknown';
-   const updated = normalized.updatedAt
-     ? new Date(normalized.updatedAt).toLocaleString()
-     : 'unknown';
+  const created = normalized.createdAt
+    ? new Date(normalized.createdAt).toLocaleString()
+    : 'unknown';
+  const updated = normalized.updatedAt
+    ? new Date(normalized.updatedAt).toLocaleString()
+    : 'unknown';
 
   let itemsText = '';
   if (normalized.items && normalized.items.length > 0) {
@@ -154,6 +156,7 @@ export function registerExpenseTools(server: McpServer, client: BoondAPIClient):
     'boond_expenses_search',
     {
       description: 'Search expense reports by resource, date range, or status',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchExpenseReportsSchema.shape,
     },
     async params => {
@@ -182,6 +185,7 @@ export function registerExpenseTools(server: McpServer, client: BoondAPIClient):
     'boond_expenses_get',
     {
       description: 'Get an expense report by ID',
+      annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: expenseReportIdSchema.shape,
     },
     async params => {
@@ -203,12 +207,17 @@ export function registerExpenseTools(server: McpServer, client: BoondAPIClient):
     'boond_expenses_create',
     {
       description: 'Create a new expense report',
-      inputSchema: createExpenseReportSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: createExpenseReportSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = createExpenseReportSchema.parse(params);
-        const report = await client.createExpenseReport(validated);
+        const validated = createExpenseReportSchema.merge(dryRunSchema).parse(params);
+        const { dryRun, ...data } = validated;
+        if (dryRun) {
+          return dryRunResponse('Create Expense Report', data);
+        }
+        const report = await client.createExpenseReport(data);
         const text = formatExpenseReport(report);
 
         return {
@@ -229,12 +238,16 @@ export function registerExpenseTools(server: McpServer, client: BoondAPIClient):
     'boond_expenses_update',
     {
       description: 'Update an existing expense report',
-      inputSchema: updateExpenseReportWithIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: updateExpenseReportWithIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = updateExpenseReportWithIdSchema.parse(params);
-        const { id, ...updateData } = validated;
+        const validated = updateExpenseReportWithIdSchema.merge(dryRunSchema).parse(params);
+        const { id, dryRun, ...updateData } = validated;
+        if (dryRun) {
+          return dryRunResponse('Update Expense Report', { id, ...updateData });
+        }
         const report = await client.updateExpenseReport(id, updateData);
         const text = formatExpenseReport(report);
 
@@ -256,18 +269,22 @@ export function registerExpenseTools(server: McpServer, client: BoondAPIClient):
     'boond_expenses_certify',
     {
       description: 'Certify an expense report (approve for payment)',
-      inputSchema: expenseReportIdSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: expenseReportIdSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = expenseReportIdSchema.parse(params);
-        await client.certifyExpenseReport(validated.id);
+        const { id, dryRun } = expenseReportIdSchema.merge(dryRunSchema).parse(params);
+        if (dryRun) {
+          return dryRunResponse('Certify Expense Report', { id });
+        }
+        await client.certifyExpenseReport(id);
 
         return {
           content: [
             {
               type: 'text',
-              text: `Expense report ${validated.id} has been certified successfully!`,
+              text: `Expense report ${id} has been certified successfully!`,
             },
           ],
         };
@@ -281,18 +298,23 @@ export function registerExpenseTools(server: McpServer, client: BoondAPIClient):
     'boond_expenses_reject',
     {
       description: 'Reject an expense report with a reason',
-      inputSchema: rejectExpenseReportSchema.shape,
+      annotations: WRITE_TOOL_ANNOTATIONS,
+      inputSchema: rejectExpenseReportSchema.merge(dryRunSchema).shape,
     },
     async params => {
       try {
-        const validated = rejectExpenseReportSchema.parse(params);
-        await client.rejectExpenseReport(validated.id, validated.reason);
+        const validated = rejectExpenseReportSchema.merge(dryRunSchema).parse(params);
+        const { id, reason, dryRun } = validated;
+        if (dryRun) {
+          return dryRunResponse('Reject Expense Report', { id, reason });
+        }
+        await client.rejectExpenseReport(id, reason);
 
         return {
           content: [
             {
               type: 'text',
-              text: `Expense report ${validated.id} has been rejected.\nReason: ${validated.reason}`,
+              text: `Expense report ${id} has been rejected.\nReason: ${reason}`,
             },
           ],
         };
