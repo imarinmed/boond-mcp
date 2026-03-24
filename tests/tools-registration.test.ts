@@ -703,14 +703,14 @@ describe('8. System Domain - Tool Registrations', () => {
   });
 
   describe('Apps Tools', () => {
-    it('should register 4 app tools', () => {
+    it('should register 5 app tools', () => {
       registerAppTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
-      expect(calls.length).toBe(4);
+      expect(calls.length).toBe(5);
     });
 
-    it('should have app tools: search, get, install, uninstall', () => {
+    it('should have app tools: search, get, install, uninstall, me', () => {
       registerAppTools(mockServer as any, mockClient);
 
       const calls = mockServer.registerTool.mock.calls;
@@ -720,6 +720,7 @@ describe('8. System Domain - Tool Registrations', () => {
       expect(toolNames).toContain('boond_apps_get');
       expect(toolNames).toContain('boond_apps_install');
       expect(toolNames).toContain('boond_apps_uninstall');
+      expect(toolNames).toContain('boond_me_get');
     });
   });
 
@@ -917,7 +918,7 @@ describe('9. Total Tool Count Verification', () => {
     mockClient = new BoondAPIClient('test-token');
   });
 
-  it('should register 126 tools across the explicitly exercised registration helpers', () => {
+  it('should register 127 tools across the explicitly exercised registration helpers', () => {
     registerCandidateTools(mockServer as any, mockClient);
     registerContactTools(mockServer as any, mockClient);
     registerResourceTools(mockServer as any, mockClient);
@@ -964,7 +965,7 @@ describe('9. Total Tool Count Verification', () => {
     registerAdvancedSearchTool(mockServer as any, mockClient);
 
     const totalCalls = mockServer.registerTool.mock.calls.length;
-    expect(totalCalls).toBe(126);
+    expect(totalCalls).toBe(127);
   });
 
   it('should verify all tools have descriptions', () => {

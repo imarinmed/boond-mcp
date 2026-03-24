@@ -41,11 +41,12 @@ USER bun
 
 # Set environment for MCP server
 ENV NODE_ENV=production
+ENV TRANSPORT_TYPE=http
+ENV PORT=3000
 
-# Health check to verify the server can start
+EXPOSE 3000
+
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
-  CMD bun build/bin/boond-mcp.js --version >/dev/null 2>&1 || exit 1
+  CMD bun -e "const res = await fetch('http://127.0.0.1:3000/health'); if (!res.ok) process.exit(1);"
 
-# Run the MCP server
-# MCP servers communicate via stdio, so we run the server directly
 CMD ["bun", "run", "build/index.js"]

@@ -1,6 +1,40 @@
 import { describe, test, expect } from 'vitest';
 import { spawn } from 'child_process';
+import { existsSync } from 'fs';
 import { join } from 'path';
+
+const repoRoot = join(__dirname, '..');
+const cliPath = join(repoRoot, 'build', 'bin', 'boond-mcp.js');
+
+let buildReadyPromise: Promise<void> | null = null;
+
+async function ensureBuiltCli(): Promise<void> {
+  if (existsSync(cliPath)) {
+    return;
+  }
+
+  if (!buildReadyPromise) {
+    buildReadyPromise = new Promise((resolve, reject) => {
+      const child = spawn('bun', ['run', 'build'], { cwd: repoRoot });
+
+      let stderr = '';
+      child.stderr.on('data', data => {
+        stderr += data.toString();
+      });
+
+      child.on('close', exitCode => {
+        if (exitCode === 0 && existsSync(cliPath)) {
+          resolve();
+          return;
+        }
+
+        reject(new Error(stderr || `CLI build failed with exit code ${exitCode}`));
+      });
+    });
+  }
+
+  await buildReadyPromise;
+}
 
 // Helper to run CLI command
 async function runCLI(args: string[] = []): Promise<{
@@ -8,8 +42,9 @@ async function runCLI(args: string[] = []): Promise<{
   stderr: string;
   exitCode: number | null;
 }> {
+  await ensureBuiltCli();
+
   return new Promise(resolve => {
-    const cliPath = join(__dirname, '..', 'build', 'bin', 'boond-mcp.js');
     const child = spawn('node', [cliPath, ...args]);
 
     let stdout = '';

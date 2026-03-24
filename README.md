@@ -56,8 +56,17 @@ npm install -g @imarinmed/boond-mcp
 ### Docker
 
 ```bash
-docker run --rm -e BOOND_API_TOKEN=your_token boond-mcp:1.0.0
+docker run --rm -p 3000:3000 \
+  -e BOOND_API_TOKEN=your_token \
+  -e MCP_API_KEY=your_mcp_api_key_here \
+  boond-mcp:1.0.0
 ```
+
+The container runs the MCP server in HTTP mode by default:
+
+- `GET /health` - health check
+- `POST /mcp/http` - stateless JSON-RPC endpoint
+- `GET /mcp` - SSE endpoint
 
 ### Manual (from source)
 
@@ -83,7 +92,7 @@ cp .env.example .env
 
 Create a `.env` file in the project root:
 
-```env
+````env
 # Boond API authentication (choose one mode)
 # 1) Legacy token mode:
 BOOND_API_TOKEN=your_api_token_here
@@ -95,7 +104,6 @@ BOOND_API_TOKEN=your_api_token_here
 # BOOND_JWT_MODE=normal
 
 MCP_API_KEY=<set_a_secure_client_key>
-MCP_API_KEY=<set_a_secure_client_key>
 
 # 3) Transport mode (optional - defaults to stdio)
 # TRANSPORT_TYPE=http  # Enable HTTP/SSE server mode
@@ -104,11 +112,11 @@ MCP_API_KEY=<set_a_secure_client_key>
 ### 📛 Server Key: `boond-mcp`
 
 > **Why `boond-mcp` and not `boondmanager`?**
-> 
+>
 > - **BoondManager** — the vendor SaaS product (API at `ui.boondmanager.com`)
 > - **`boond-mcp`** — this MCP server's canonical identifier (package name, CLI binary, and `mcpServers` key)
 > - **`boondmanager`** — legacy alias seen in configs created before v1.2; both work, but **new configs should use `boond-mcp`**
-> 
+>
 > If you see `"boondmanager"` in an existing config, rename the key to `"boond-mcp"` for consistency.
 
 
@@ -132,7 +140,7 @@ Add the following to your Claude Desktop configuration file:
     }
   }
 }
-```
+````
 
 **Note**: Make sure to use the absolute path to the built index.js file.
 
@@ -150,6 +158,7 @@ export BOOND_MCP_API_KEY="<your-api-key>"
 ```
 
 Then reload your profile:
+
 ```bash
 source ~/.zshrc  # or ~/.bashrc
 ```
@@ -197,11 +206,13 @@ TRANSPORT_TYPE=http PORT=3000 MCP_API_KEY=secret node build/index.js
 ```
 
 **Endpoints:**
+
 - `GET /mcp` - SSE connection endpoint (requires session management)
 - `POST /mcp?sessionId=xxx` - Send JSON-RPC messages
 - `GET /health` - Health check
 
 **Usage flow:**
+
 1. Establish SSE connection: `GET /mcp` → receive `sessionId`
 2. Send messages: `POST /mcp?sessionId=xxx` with JSON-RPC
 3. Receive responses through SSE stream
@@ -217,9 +228,11 @@ TRANSPORT_TYPE=http PORT=3000 MCP_API_KEY=secret node build/index.js
 ```
 
 **Endpoint:**
+
 - `POST /mcp/http` - Stateless JSON-RPC endpoint
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:3000/mcp/http \
   -H "Content-Type: application/json" \
@@ -236,6 +249,7 @@ curl -X POST http://localhost:3000/mcp/http \
 ```
 
 **Benefits:**
+
 - ✅ No session management required
 - ✅ Simple request/response pattern
 - ✅ Works with any HTTP client
@@ -243,11 +257,11 @@ curl -X POST http://localhost:3000/mcp/http \
 
 ### Choosing a Transport
 
-| Transport | Session | Complexity | Best For |
-|-----------|---------|------------|----------|
-| **stdio** | N/A | Low | Claude Desktop, local tools |
-| **SSE** | Required | Medium | Real-time apps, long-lived connections |
-| **HTTP Stateless** | None | Low | Quick scripts, testing, OpenCode |
+| Transport          | Session  | Complexity | Best For                               |
+| ------------------ | -------- | ---------- | -------------------------------------- |
+| **stdio**          | N/A      | Low        | Claude Desktop, local tools            |
+| **SSE**            | Required | Medium     | Real-time apps, long-lived connections |
+| **HTTP Stateless** | None     | Low        | Quick scripts, testing, OpenCode       |
 
 ## Available Tools (121 Total)
 
