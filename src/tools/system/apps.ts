@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { searchParamsSchema, appIdSchema } from '../../types/schemas.js';
-import type { App, SearchResponse } from '../../types/boond.js';
+import type { App, CurrentUser, SearchResponse } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
 import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
@@ -32,6 +32,24 @@ function formatApp(app: App): string {
   if (app.status) lines.push(`Status: ${app.status}`);
   if (app.createdAt) lines.push(`Created: ${app.createdAt}`);
   if (app.updatedAt) lines.push(`Updated: ${app.updatedAt}`);
+
+  return lines.join('\n');
+}
+
+function formatCurrentUser(account: CurrentUser): string {
+  const lines: string[] = [];
+  const fullName = `${account.firstName} ${account.lastName}`.trim();
+  lines.push(`👤 Current User: ${fullName || account.login || account.id}`);
+  lines.push(`ID: ${account.id}`);
+  if (account.email) lines.push(`Email: ${account.email}`);
+  if (account.phone) lines.push(`Phone: ${account.phone}`);
+  if (account.login) lines.push(`Login: ${account.login}`);
+  if (account.level) lines.push(`Level: ${account.level}`);
+  if (account.language) lines.push(`Language: ${account.language}`);
+  if (account.currency !== undefined) lines.push(`Currency: ${account.currency}`);
+  if (account.isOwner !== undefined) lines.push(`Owner: ${account.isOwner ? 'Yes' : 'No'}`);
+  if (account.createdAt) lines.push(`Created: ${account.createdAt}`);
+  if (account.updatedAt) lines.push(`Updated: ${account.updatedAt}`);
 
   return lines.join('\n');
 }
@@ -141,24 +159,23 @@ export function registerAppTools(server: McpServer, client: BoondAPIClient): voi
   );
 
   server.registerTool(
-      'boond_me_get',
-      {
-        description: 'Deprecated: /me endpoint is not supported by Boond API',
-        annotations: READ_TOOL_ANNOTATIONS,
-        inputSchema: {},
-      },
-      async () => {
+    'boond_me_get',
+    {
+      description: 'Get current authenticated user profile',
+      annotations: READ_TOOL_ANNOTATIONS,
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const account = await client.getMe();
+        const text = formatCurrentUser(account);
+
         return {
-          content: [
-            {
-              type: 'text',
-              text: 'The /me endpoint is not available. Use boond_apps_search to find user information through apps or access user data through specific entity endpoints like candidates, resources, or contacts.',
-            },
-          ],
-          isError: true,
+          content: [{ type: 'text', text }],
         };
-
+      } catch (error) {
+        return handleToolError(error, 'retrieving', 'Current User');
       }
-    );
+    }
+  );
 }
-

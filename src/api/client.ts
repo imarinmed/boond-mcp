@@ -1817,9 +1817,11 @@ export class BoondAPIClient {
   /**
    * Download document
    */
-  async downloadDocument(id: string): Promise<{ url: string; contentType: string; filename: string }> {
+  async downloadDocument(
+    id: string
+  ): Promise<{ url: string; contentType: string; filename: string }> {
     const url = `${this.baseUrl}/documents/${encodeURIComponent(id)}/download`;
-    
+
     // Return the download URL and metadata
     // The actual download can be done by the caller if needed
     return {
@@ -1867,11 +1869,29 @@ export class BoondAPIClient {
     await this.request<void>('POST', `/apps/${encodeURIComponent(id)}/uninstall`);
   }
 
-  /**
-   * Get current user account info
-   */
-  async getMe(): Promise<Account> {
-    return this.request<Account>('GET', '/me');
+  async getMe(): Promise<CurrentUser> {
+    const attempts: Array<() => Promise<CurrentUser>> = [
+      () => this.request<CurrentUser>('GET', '/accounts/me'),
+      () => this.getCurrentUser(),
+      () => this.request<CurrentUser>('GET', '/me'),
+    ];
+
+    let lastError: unknown;
+
+    for (const attempt of attempts) {
+      try {
+        return await attempt();
+      } catch (error) {
+        lastError = error;
+        const classification = classifyError(error).classification;
+        if (classification === 'resource_not_found' || classification === 'unsupported_endpoint') {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw lastError;
   }
 
   /**
