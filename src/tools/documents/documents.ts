@@ -85,34 +85,26 @@ function formatDocument(doc: Document): string {
 
 export function registerDocumentTools(server: McpServer, client: BoondAPIClient): void {
   server.registerTool(
-    'boond_documents_search',
-    {
-      description: 'Search documents across the system',
-      annotations: READ_TOOL_ANNOTATIONS,
-      inputSchema: searchParamsSchema.shape,
-    },
-    async params => {
-      try {
-        const validated = searchParamsSchema.parse(params);
-        const result = await client.searchDocuments(validated);
-        
-        if (result.data.length === 0) {
-          return {
-            content: [{ type: 'text', text: 'No documents found.' }],
-          };
-        }
-
-        const documents = result.data.map(formatDocument);
-        const summary = `Found ${result.data.length} document(s) (Page ${result.pagination.page}/${Math.ceil(result.pagination.total / result.pagination.limit)} of ${result.pagination.total} total)`;
-
+      'boond_documents_search',
+      {
+        description: 'Deprecated: global documents search is not supported by Boond API',
+        annotations: READ_TOOL_ANNOTATIONS,
+        inputSchema: searchParamsSchema.shape,
+      },
+      async params => {
+        searchParamsSchema.parse(params);
+  
         return {
-          content: [{ type: 'text', text: `${summary}\n\n${documents.join('\n\n')}` }],
+          content: [
+            {
+              type: 'text',
+              text: 'Global document search is not supported by Boond API. Retrieve documents from an owning record (for example a candidate, resource, company, project, or contract), then fetch the document by its ID with boond_documents_get.',
+            },
+          ],
+          isError: true,
         };
-      } catch (error) {
-        return handleToolError(error, 'searching', 'documents');
       }
-    }
-  );
+    );
 
   server.registerTool(
     'boond_documents_get',
