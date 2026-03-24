@@ -39,6 +39,9 @@ import type {
   Setting,
   Alert,
   Contract,
+  Flag,
+  Perimeter,
+  CurrentUser,
 } from '../types/boond.js';
 import type {
   SearchParams,
@@ -667,6 +670,14 @@ export class BoondAPIClient {
     return this.request<Candidate>('GET', `/candidates/${encodeURIComponent(id)}`);
   }
 
+  async getCandidateInformation(id: string): Promise<Candidate> {
+    return this.request<Candidate>('GET', `/candidates/${encodeURIComponent(id)}/information`);
+  }
+
+  async getCandidateDefault(): Promise<Candidate> {
+    return this.request<Candidate>('GET', '/candidates/default');
+  }
+
   /**
    * Create candidate
    */
@@ -708,6 +719,17 @@ export class BoondAPIClient {
     return this.request<Company>('GET', `/companies/${encodeURIComponent(id)}`);
   }
 
+  async getCompanyContacts(id: string): Promise<SearchResponse<Contact>> {
+    return this.request<SearchResponse<Contact>>(
+      'GET',
+      `/companies/${encodeURIComponent(id)}/contacts`
+    );
+  }
+
+  async getCompanyDefault(): Promise<Company> {
+    return this.request<Company>('GET', '/companies/default');
+  }
+
   /**
    * Create company
    */
@@ -747,6 +769,17 @@ export class BoondAPIClient {
    */
   async getOpportunity(id: string): Promise<Opportunity> {
     return this.request<Opportunity>('GET', `/opportunities/${encodeURIComponent(id)}`);
+  }
+
+  async getOpportunityQuotations(id: string): Promise<SearchResponse<Quotation>> {
+    return this.request<SearchResponse<Quotation>>(
+      'GET',
+      `/opportunities/${encodeURIComponent(id)}/quotations`
+    );
+  }
+
+  async getOpportunityDefault(): Promise<Opportunity> {
+    return this.request<Opportunity>('GET', '/opportunities/default');
   }
 
   /**
@@ -918,6 +951,13 @@ export class BoondAPIClient {
     return merged as unknown as Resource;
   }
 
+  async getResourceContracts(id: string): Promise<SearchResponse<Contract>> {
+    return this.request<SearchResponse<Contract>>(
+      'GET',
+      `/resources/${encodeURIComponent(id)}/contracts`
+    );
+  }
+
   /**
    * Create resource
    */
@@ -1002,6 +1042,17 @@ export class BoondAPIClient {
    */
   async getProject(id: string): Promise<Project> {
     return this.request<Project>('GET', `/projects/${encodeURIComponent(id)}`);
+  }
+
+  async getProjectDeliveries(id: string): Promise<SearchResponse<Delivery>> {
+    return this.request<SearchResponse<Delivery>>(
+      'GET',
+      `/projects/${encodeURIComponent(id)}/deliveries`
+    );
+  }
+
+  async getProjectDefault(): Promise<Project> {
+    return this.request<Project>('GET', '/projects/default');
   }
 
   /**
@@ -1280,6 +1331,10 @@ export class BoondAPIClient {
    */
   async getInvoice(id: string): Promise<Invoice> {
     return this.request<Invoice>('GET', `/invoices/${encodeURIComponent(id)}`);
+  }
+
+  async getInvoiceDefault(): Promise<Invoice> {
+    return this.request<Invoice>('GET', '/invoices/default');
   }
 
   /**
@@ -1831,6 +1886,28 @@ export class BoondAPIClient {
   }
 
   /**
+   * Get application dictionary
+   */
+  async getDictionary(params?: {
+    language?: 'fr' | 'en' | 'es';
+    mergeAllLanguages?: boolean;
+  }): Promise<{ meta: Record<string, unknown>; data: { setting: Record<string, unknown> } }> {
+    const query = new URLSearchParams();
+    if (params?.language) {
+      query.set('language', params.language);
+    }
+    if (params?.mergeAllLanguages !== undefined) {
+      query.set('mergeAllLanguages', String(params.mergeAllLanguages));
+    }
+    const qs = query.toString();
+    const path = qs ? `/application/dictionary?${qs}` : '/application/dictionary';
+    return this.request<{
+      meta: Record<string, unknown>;
+      data: { setting: Record<string, unknown> };
+    }>('GET', path);
+  }
+
+  /**
    * Update setting
    */
   async updateSetting(id: string, data: UpdateSetting): Promise<Setting> {
@@ -1862,5 +1939,51 @@ export class BoondAPIClient {
    */
   async updateAlert(id: string, data: { resolved?: boolean }): Promise<Alert> {
     return this.request<Alert>('PUT', `/alerts/${encodeURIComponent(id)}`, data);
+  }
+
+  // ============================================================================
+  // FLAGS DOMAIN (Task 8)
+  // ============================================================================
+
+  /**
+   * Search flags
+   */
+  async searchFlags(params: SearchParams): Promise<SearchResponse<Flag>> {
+    const query = new URLSearchParams({
+      ...(params.query && { query: params.query }),
+      page: String(params.page),
+      limit: String(Math.min(params.limit, 100)),
+    });
+
+    return this.request<SearchResponse<Flag>>('GET', `/flags?${query.toString()}`);
+  }
+
+  /**
+   * Get flag by ID
+   */
+  async getFlag(id: string): Promise<Flag> {
+    return this.request<Flag>('GET', `/flags/${encodeURIComponent(id)}`);
+  }
+
+  // ============================================================================
+  // PERIMETERS DOMAIN (Task 8)
+  // ============================================================================
+
+  /**
+   * Get application perimeters
+   * Returns perimeter configuration, optionally filtered by module
+   */
+  async getPerimeters(params?: { module?: string }): Promise<Perimeter> {
+    const query = new URLSearchParams();
+    if (params?.module) {
+      query.set('module', params.module);
+    }
+    const qs = query.toString();
+    const path = qs ? `/application/perimeters?${qs}` : '/application/perimeters';
+    return this.request<Perimeter>('GET', path);
+  }
+
+  async getCurrentUser(): Promise<CurrentUser> {
+    return this.request<CurrentUser>('GET', '/application/current-user');
   }
 }

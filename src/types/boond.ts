@@ -460,3 +460,54 @@ export interface Alert {
   createdAt: string;
   resolvedAt?: string;
 }
+
+/**
+ * Flag resource - System domain
+ * Used for categorizing/tagging entities across the system
+ */
+export interface Flag {
+  id: string;
+  name: string;
+  color?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Perimeter resource - System domain
+ * Defines access boundaries and management scopes
+ */
+export interface Perimeter {
+  id: string;
+  name: string;
+  module?: string;
+  required?: boolean;
+  allManagerTypes?: boolean;
+  allAgencies?: boolean;
+  resourceTypes?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * CurrentUser resource - System domain
+ * Represents the authenticated user from GET /application/current-user
+ */
+export interface CurrentUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  thumbnail?: string;
+  email?: string;
+  phone?: string;
+  language?: string;
+  currency?: number;
+  exchangeRate?: number;
+  login?: string;
+  level?: string;
+  userToken?: string;
+  isOwner?: boolean;
+  advancedRights?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
