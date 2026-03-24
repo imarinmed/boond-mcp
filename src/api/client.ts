@@ -41,6 +41,7 @@ import type {
   Contract,
   Flag,
   Perimeter,
+  CurrentUser,
 } from '../types/boond.js';
 import type {
   SearchParams,
@@ -1961,5 +1962,9 @@ export class BoondAPIClient {
     const qs = query.toString();
     const path = qs ? `/application/perimeters?${qs}` : '/application/perimeters';
     return this.request<Perimeter>('GET', path);
+  }
+
+  async getCurrentUser(): Promise<CurrentUser> {
+    return this.request<CurrentUser>('GET', '/application/current-user');
   }
 }

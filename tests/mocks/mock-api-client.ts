@@ -26,6 +26,7 @@ import type {
   Alert,
   Flag,
   Perimeter,
+  CurrentUser,
   SearchResponse,
 } from '../../src/types/boond.js';
 
@@ -366,6 +367,25 @@ export const mockPerimeter = (overrides?: Partial<Perimeter>): Perimeter => ({
   allManagerTypes: false,
   allAgencies: true,
   resourceTypes: [],
+  createdAt: generateDate(),
+  updatedAt: generateDate(),
+  ...overrides,
+});
+
+export const mockCurrentUser = (overrides?: Partial<CurrentUser>): CurrentUser => ({
+  id: generateId(),
+  firstName: 'Jeremy',
+  lastName: 'SEBBAN',
+  email: 'jsebban@inno-it.es',
+  phone: '618 59 64 17',
+  language: 'en',
+  currency: 0,
+  exchangeRate: 1,
+  login: 'jsebban@inno-it.es',
+  level: 'manager',
+  userToken: '3336332e696e6e6f6974',
+  isOwner: false,
+  advancedRights: {},
   createdAt: generateDate(),
   updatedAt: generateDate(),
   ...overrides,
@@ -1510,6 +1530,13 @@ export class MockBoondAPIClient {
     await this.simulateDelay();
     this.maybeThrow();
     return mockPerimeter(params);
+  }
+
+  async getCurrentUser(): Promise<CurrentUser> {
+    this.recordCall('getCurrentUser', []);
+    await this.simulateDelay();
+    this.maybeThrow();
+    return mockCurrentUser();
   }
 }
 

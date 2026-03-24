@@ -44,7 +44,7 @@ ENV NODE_ENV=production
 
 # Health check to verify the server can start
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
-  CMD bun build/index.js --version 2>&1 | grep -q "boond-mcp" || exit 1
+  CMD bun build/bin/boond-mcp.js --version >/dev/null 2>&1 || exit 1
 
 # Run the MCP server
 # MCP servers communicate via stdio, so we run the server directly

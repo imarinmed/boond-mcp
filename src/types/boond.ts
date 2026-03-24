@@ -488,3 +488,26 @@ export interface Perimeter {
   createdAt?: string;
   updatedAt?: string;
 }
+
+/**
+ * CurrentUser resource - System domain
+ * Represents the authenticated user from GET /application/current-user
+ */
+export interface CurrentUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  thumbnail?: string;
+  email?: string;
+  phone?: string;
+  language?: string;
+  currency?: number;
+  exchangeRate?: number;
+  login?: string;
+  level?: string;
+  userToken?: string;
+  isOwner?: boolean;
+  advancedRights?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}

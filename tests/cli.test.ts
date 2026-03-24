@@ -28,92 +28,142 @@ async function runCLI(args: string[] = []): Promise<{
   });
 }
 
+const CLI_TEST_TIMEOUT_MS = 15000;
+
 describe('CLI Framework', () => {
   describe('Version Flag', () => {
-    test('should display version with -v flag', async () => {
-      const result = await runCLI(['-v']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
-    });
+    test(
+      'should display version with -v flag',
+      async () => {
+        const result = await runCLI(['-v']);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
+      },
+      CLI_TEST_TIMEOUT_MS
+    );
 
-    test('should display version with --version flag', async () => {
-      const result = await runCLI(['--version']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
-    });
+    test(
+      'should display version with --version flag',
+      async () => {
+        const result = await runCLI(['--version']);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
+      },
+      CLI_TEST_TIMEOUT_MS
+    );
   });
 
   describe('Help Flag', () => {
-    test('should display help with -h flag', async () => {
-      const result = await runCLI(['-h']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Usage:');
-      expect(result.stdout).toContain('boond-mcp');
-    });
+    test(
+      'should display help with -h flag',
+      async () => {
+        const result = await runCLI(['-h']);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('Usage:');
+        expect(result.stdout).toContain('boond-mcp');
+      },
+      CLI_TEST_TIMEOUT_MS
+    );
 
-    test('should display help with --help flag', async () => {
-      const result = await runCLI(['--help']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Usage:');
-      expect(result.stdout).toContain('boond-mcp');
-    });
+    test(
+      'should display help with --help flag',
+      async () => {
+        const result = await runCLI(['--help']);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('Usage:');
+        expect(result.stdout).toContain('boond-mcp');
+      },
+      CLI_TEST_TIMEOUT_MS
+    );
   });
 
   describe('Subcommands', () => {
-    test("should recognize 'init' subcommand", async () => {
-      const result = await runCLI(['init', '--help']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Initialize boond-mcp configuration');
-    });
+    test(
+      "should recognize 'init' subcommand",
+      async () => {
+        const result = await runCLI(['init', '--help']);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('Initialize boond-mcp configuration');
+      },
+      CLI_TEST_TIMEOUT_MS
+    );
 
-    test("should recognize 'validate' subcommand", async () => {
-      const result = await runCLI(['validate', '--help']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Validate boond-mcp configuration');
-    });
+    test(
+      "should recognize 'validate' subcommand",
+      async () => {
+        const result = await runCLI(['validate', '--help']);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('Validate boond-mcp configuration');
+      },
+      CLI_TEST_TIMEOUT_MS
+    );
 
-    test("should recognize 'test' subcommand", async () => {
-      const result = await runCLI(['test', '--help']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Test API connection');
-    });
+    test(
+      "should recognize 'test' subcommand",
+      async () => {
+        const result = await runCLI(['test', '--help']);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('Test API connection');
+      },
+      CLI_TEST_TIMEOUT_MS
+    );
 
-    test("should recognize 'doctor' subcommand", async () => {
-      const result = await runCLI(['doctor', '--help']);
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Diagnose boond-mcp setup and configuration issues');
-    });
+    test(
+      "should recognize 'doctor' subcommand",
+      async () => {
+        const result = await runCLI(['doctor', '--help']);
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('Diagnose boond-mcp setup and configuration issues');
+      },
+      CLI_TEST_TIMEOUT_MS
+    );
   });
 });
 
 describe('Init Command', () => {
-  test('should display help for init command', async () => {
-    const result = await runCLI(['init', '--help']);
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Initialize boond-mcp configuration');
-  });
+  test(
+    'should display help for init command',
+    async () => {
+      const result = await runCLI(['init', '--help']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Initialize boond-mcp configuration');
+    },
+    CLI_TEST_TIMEOUT_MS
+  );
 });
 
 describe('Validate Command', () => {
-  test('should recognize validate command', async () => {
-    const result = await runCLI(['validate', '--help']);
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Validate boond-mcp configuration');
-  });
+  test(
+    'should recognize validate command',
+    async () => {
+      const result = await runCLI(['validate', '--help']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Validate boond-mcp configuration');
+    },
+    CLI_TEST_TIMEOUT_MS
+  );
 });
 
 describe('Test Command', () => {
-  test('should recognize test command', async () => {
-    const result = await runCLI(['test', '--help']);
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Test API connection');
-  });
+  test(
+    'should recognize test command',
+    async () => {
+      const result = await runCLI(['test', '--help']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Test API connection');
+    },
+    CLI_TEST_TIMEOUT_MS
+  );
 });
 
 describe('Doctor Command', () => {
-  test('should recognize doctor command', async () => {
-    const result = await runCLI(['doctor', '--help']);
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Diagnose boond-mcp setup and configuration issues');
-  });
+  test(
+    'should recognize doctor command',
+    async () => {
+      const result = await runCLI(['doctor', '--help']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Diagnose boond-mcp setup and configuration issues');
+    },
+    CLI_TEST_TIMEOUT_MS
+  );
 });

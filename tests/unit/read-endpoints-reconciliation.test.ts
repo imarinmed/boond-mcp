@@ -91,6 +91,42 @@ describe('official GET/read endpoint reconciliation', () => {
     expect(firstCallOptions.method).toBe('GET');
   });
 
+  it('uses GET /application/current-user and normalizes identity aliases', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        data: {
+          id: 'user-42',
+          type: 'currentuser',
+          attributes: {
+            firstName: 'Jeremy',
+            lastName: 'SEBBAN',
+            email1: 'jsebban@inno-it.es',
+            login: 'jsebban@inno-it.es',
+            level: 'manager',
+            isOwner: false,
+            userToken: 'secret-token',
+            advancedRights: { admin: true },
+          },
+        },
+      })
+    );
+
+    const client = new BoondAPIClient('test-token');
+    const result = await client.getCurrentUser();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const firstCallUrl = String(fetchMock.mock.calls[0]?.[0]);
+    const firstCallOptions = fetchMock.mock.calls[0]?.[1] as { method?: string };
+
+    expect(firstCallUrl).toContain('/api/application/current-user');
+    expect(firstCallOptions.method).toBe('GET');
+    expect(result.email).toBe('jsebban@inno-it.es');
+    expect(result.login).toBe('jsebban@inno-it.es');
+    expect(result.userToken).toBe('secret-token');
+    expect(result.advancedRights).toEqual({ admin: true });
+  });
+
   // COLLECTION PATTERN TESTS (list/search endpoints)
 
   describe('collection pattern (list/search)', () => {
@@ -611,6 +647,40 @@ describe('official GET/read endpoint reconciliation', () => {
       expect(requestUrl.pathname).toBe('/api/application/dictionary');
       expect(requestUrl.searchParams.get('language')).toBe('es');
       expect(requestUrl.searchParams.get('mergeAllLanguages')).toBe('true');
+    });
+  });
+
+  describe('application current-user (identity endpoint)', () => {
+    it('uses GET /application/current-user for current user retrieval', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(200, {
+          meta: { version: '9.1.38.4', isLogged: true },
+          data: {
+            id: '454',
+            type: 'currentuser',
+            attributes: {
+              firstName: 'Jeremy',
+              lastName: 'SEBBAN',
+              email1: 'jsebban@inno-it.es',
+              login: 'jsebban@inno-it.es',
+              level: 'manager',
+              isOwner: false,
+            },
+          },
+        })
+      );
+
+      const client = new BoondAPIClient('test-token');
+      await client.getCurrentUser();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const firstCallUrl = String(fetchMock.mock.calls[0]?.[0]);
+      const firstCallOptions = fetchMock.mock.calls[0]?.[1] as { method?: string };
+      const requestUrl = new URL(firstCallUrl);
+
+      expect(requestUrl.pathname).toBe('/api/application/current-user');
+      expect(firstCallOptions.method).toBe('GET');
     });
   });
 });

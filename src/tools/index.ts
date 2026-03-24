@@ -50,6 +50,7 @@ export {
   registerDictionaryTools,
   registerFlagTools,
   registerPerimeterTools,
+  registerCurrentUserTools,
   registerFullTextSearchTool,
   registerFacetedSearchTool,
   registerDateRangeSearchTool,

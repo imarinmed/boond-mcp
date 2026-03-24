@@ -128,4 +128,20 @@ describe('System Domain Tools', () => {
       expect(result.module).toBe('resources');
     });
   });
+
+  describe('Current User', () => {
+    it('should get current user', async () => {
+      const result = await mockClient.getCurrentUser();
+      expect(result.id).toBeDefined();
+      expect(result.firstName).toBeDefined();
+      expect(result.lastName).toBeDefined();
+    });
+
+    it('should return current user identity fields', async () => {
+      const result = await mockClient.getCurrentUser();
+      expect(result.login).toBeDefined();
+      expect(result.level).toBeDefined();
+      expect(typeof result.isOwner).toBe('boolean');
+    });
+  });
 });

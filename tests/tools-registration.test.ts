@@ -1,11 +1,6 @@
-/**
- * Tool Registration Tests
- * Tests for all 121 tool registrations across 8 business domains
- * Validates input schemas, success paths, error handling, and edge cases
- */
-
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BoondAPIClient } from '../src/api/client';
+import { mockCurrentUser } from './mocks/mock-api-client';
 import {
   registerCandidateTools,
   registerContactTools,
@@ -58,6 +53,7 @@ import {
   registerDictionaryTools,
   registerFlagTools,
   registerPerimeterTools,
+  registerCurrentUserTools,
   registerFullTextSearchTool,
   registerFacetedSearchTool,
   registerDateRangeSearchTool,
@@ -821,11 +817,95 @@ describe('8. System Domain - Tool Registrations', () => {
       expect(toolNames).toContain('boond_perimeters_get');
     });
   });
+
+  describe('Current User Tools', () => {
+    it('should register 1 current user tool', () => {
+      registerCurrentUserTools(mockServer as any, mockClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      expect(calls.length).toBe(1);
+    });
+
+    it('should register boond_current_user_get', () => {
+      registerCurrentUserTools(mockServer as any, mockClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      const toolNames = calls.map((call: any[]) => call[0]);
+
+      expect(toolNames).toContain('boond_current_user_get');
+    });
+
+    it('should return formatted current user output from handler', async () => {
+      class CurrentUserTestClient extends BoondAPIClient {
+        async getCurrentUser() {
+          return mockCurrentUser();
+        }
+      }
+
+      const currentUserClient = new CurrentUserTestClient('test-token');
+
+      registerCurrentUserTools(mockServer as any, currentUserClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      const currentUserCall = calls.find((call: any[]) => call[0] === 'boond_current_user_get');
+
+      expect(currentUserCall).toBeDefined();
+      if (currentUserCall) {
+        const handler = currentUserCall[2];
+        const result = await handler({});
+
+        expect(result).toEqual({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('👤 Current User:'),
+            },
+          ],
+        });
+
+        const text = result.content[0]?.text ?? '';
+        expect(text).toContain('Jeremy SEBBAN');
+        expect(text).toContain('Login:');
+        expect(text).toContain('Level:');
+        expect(text).not.toContain('secret-token');
+        expect(text).not.toContain('advancedRights');
+      }
+    });
+
+    it('should omit sensitive current user fields from rendered output', async () => {
+      class CurrentUserTestClient extends BoondAPIClient {
+        async getCurrentUser() {
+          return mockCurrentUser({
+            userToken: 'secret-token',
+            advancedRights: { admin: true, finance: true },
+          });
+        }
+      }
+
+      const currentUserClient = new CurrentUserTestClient('test-token');
+
+      registerCurrentUserTools(mockServer as any, currentUserClient);
+
+      const calls = mockServer.registerTool.mock.calls;
+      const currentUserCall = calls.find((call: any[]) => call[0] === 'boond_current_user_get');
+
+      expect(currentUserCall).toBeDefined();
+      if (currentUserCall) {
+        const handler = currentUserCall[2];
+        const result = await handler({});
+        const text = result.content[0]?.text ?? '';
+
+        expect(text).toContain('Jeremy SEBBAN');
+        expect(text).not.toContain('secret-token');
+        expect(text).not.toContain('admin');
+        expect(text).not.toContain('finance');
+        expect(text).not.toContain('advancedRights');
+        expect(text).not.toContain('userToken');
+      }
+    });
+  });
 });
 
-/**
- * SECTION 9: Total Tool Count Verification
- */
 describe('9. Total Tool Count Verification', () => {
   let mockServer: MockMcpServer;
   let mockClient: BoondAPIClient;
@@ -837,7 +917,7 @@ describe('9. Total Tool Count Verification', () => {
     mockClient = new BoondAPIClient('test-token');
   });
 
-  it('should register total of 125 tools across all domains', () => {
+  it('should register 126 tools across the explicitly exercised registration helpers', () => {
     registerCandidateTools(mockServer as any, mockClient);
     registerContactTools(mockServer as any, mockClient);
     registerResourceTools(mockServer as any, mockClient);
@@ -877,13 +957,14 @@ describe('9. Total Tool Count Verification', () => {
     registerDictionaryTools(mockServer as any, mockClient);
     registerFlagTools(mockServer as any, mockClient);
     registerPerimeterTools(mockServer as any, mockClient);
+    registerCurrentUserTools(mockServer as any, mockClient);
     registerFullTextSearchTool(mockServer as any, mockClient);
     registerFacetedSearchTool(mockServer as any, mockClient);
     registerDateRangeSearchTool(mockServer as any, mockClient);
     registerAdvancedSearchTool(mockServer as any, mockClient);
 
     const totalCalls = mockServer.registerTool.mock.calls.length;
-    expect(totalCalls).toBe(125);
+    expect(totalCalls).toBe(126);
   });
 
   it('should verify all tools have descriptions', () => {
@@ -945,14 +1026,26 @@ describe('10. Handler Execution & Error Handling', () => {
     });
 
     it('should handle search with missing required parameters', async () => {
-      registerCandidateTools(mockServer as any, mockClient);
+      class CandidateSearchTestClient extends BoondAPIClient {
+        async searchCandidates(_params: {
+          page: number;
+          limit: number;
+          query?: string;
+        }): Promise<never> {
+          throw new Error('search failed');
+        }
+      }
+
+      const candidateClient = new CandidateSearchTestClient('test-token');
+
+      registerCandidateTools(mockServer as any, candidateClient);
 
       const calls = mockServer.registerTool.mock.calls;
       const searchCall = calls.find((call: any[]) => call[0] === 'boond_candidates_search');
 
       if (searchCall) {
         const handler = searchCall[2];
-        const result = await handler({});
+        const result = await handler({ page: 1, limit: 20 });
 
         expect(result).toBeDefined();
         expect(result.isError).toBe(true);
