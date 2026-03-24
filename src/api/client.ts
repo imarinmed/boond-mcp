@@ -1762,55 +1762,16 @@ export class BoondAPIClient {
   /**
    * Download document
    */
-  async downloadDocument(id: string): Promise<{ data: Blob; contentType: string; filename: string }> {
+  async downloadDocument(id: string): Promise<{ url: string; contentType: string; filename: string }> {
     const url = `${this.baseUrl}/documents/${encodeURIComponent(id)}/download`;
-    const headers: Record<string, string> = {
-      "User-Agent": "boond-mcp/1.0.0 (https://github.com/imarinmed/boond-mcp)",
-      ...this.buildAuthHeaders(),
+    
+    // Return the download URL and metadata
+    // The actual download can be done by the caller if needed
+    return {
+      url,
+      contentType: 'application/octet-stream',
+      filename: `document-${id}`,
     };
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new ApiError(
-          response.status,
-          `Failed to download document: HTTP ${response.status}`,
-          "DOCUMENT_DOWNLOAD_FAILED"
-        );
-      }
-
-      const data = await response.blob();
-      const contentType = response.headers.get("content-type") || "application/octet-stream";
-      const contentDisposition = response.headers.get("content-disposition") || "";
-      const filenameMatch = contentDisposition.match(/filename="?([^"]*)"?/);
-      const filename = filenameMatch ? filenameMatch[1] : `document-${id}`;
-
-      return { data, contentType, filename };
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new ApiError(0, `Request timeout after ${this.requestTimeout}ms`, "TIMEOUT_ERROR");
-      }
-
-      if (error instanceof TypeError) {
-        console.error("Network error:", error.message);
-        throw new ApiError(0, `Network error: ${error.message}`, "NETWORK_ERROR");
-      }
-
-      console.error("Unexpected error:", error instanceof Error ? error.message : String(error));
-      throw new ApiError(0, "Unexpected error", "UNEXPECTED_ERROR");
     }
   }
 
