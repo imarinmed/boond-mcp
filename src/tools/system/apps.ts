@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BoondAPIClient } from '../../api/client.js';
 import { searchParamsSchema, appIdSchema } from '../../types/schemas.js';
-import type { App, SearchResponse } from '../../types/boond.js';
+import type { App, SearchResponse, Account } from '../../types/boond.js';
 import { handleSearchError, handleToolError } from '../../utils/error-handling.js';
 import { READ_TOOL_ANNOTATIONS, WRITE_TOOL_ANNOTATIONS } from '../../utils/tool-registry.js';
 import { dryRunSchema, dryRunResponse } from '../../utils/dry-run.js';
@@ -139,4 +139,39 @@ export function registerAppTools(server: McpServer, client: BoondAPIClient): voi
       }
     }
   );
+
+  server.registerTool(
+    'boond_me_get',
+    {
+      description: 'Get current user account information',
+      annotations: READ_TOOL_ANNOTATIONS,
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const account = await client.getMe();
+        const text = formatAccount(account);
+
+        return {
+          content: [{ type: 'text', text }],
+        };
+      } catch (error) {
+        return handleToolError(error, 'retrieving', 'Account');
+      }
+    }
+  );
+}
+
+function formatAccount(account: Account): string {
+  const lines: string[] = [];
+  lines.push(`👤 Account Information`);
+  lines.push(`ID: ${account.id}`);
+  lines.push(`Username: ${account.username}`);
+  if (account.email) lines.push(`Email: ${account.email}`);
+  if (account.role) lines.push(`Role: ${account.role}`);
+  if (account.status) lines.push(`Status: ${account.status}`);
+  if (account.createdAt) lines.push(`Created: ${account.createdAt}`);
+  if (account.updatedAt) lines.push(`Updated: ${account.updatedAt}`);
+
+  return lines.join('\n');
 }

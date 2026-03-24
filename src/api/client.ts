@@ -1752,6 +1752,16 @@ export class BoondAPIClient {
     return this.request<Document>('GET', `/documents/${encodeURIComponent(id)}`);
   }
 
+  async downloadDocument(id: string): Promise<{ url: string; filename: string; contentType: string }> {
+    const doc = await this.getDocument(id);
+    
+    return {
+      url: doc.url || '',
+      filename: doc.name || `document-${id}`,
+      contentType: 'application/octet-stream',
+    };
+  }
+
   /**
    * Update document
    */
@@ -1809,6 +1819,10 @@ export class BoondAPIClient {
    */
   async searchSettings(): Promise<SearchResponse<Setting>> {
     return this.request<SearchResponse<Setting>>('GET', '/application/settings');
+  }
+
+  async getSetting(id: string): Promise<Setting> {
+    return this.request<Setting>('GET', `/settings/${encodeURIComponent(id)}`);
   }
 
   /**

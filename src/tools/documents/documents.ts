@@ -87,22 +87,30 @@ export function registerDocumentTools(server: McpServer, client: BoondAPIClient)
   server.registerTool(
     'boond_documents_search',
     {
-      description: 'Deprecated: global documents search is not supported by Boond API',
+      description: 'Search documents across the system',
       annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: searchParamsSchema.shape,
     },
     async params => {
-      searchParamsSchema.parse(params);
+      try {
+        const validated = searchParamsSchema.parse(params);
+        const result = await client.searchDocuments(validated);
+        
+        if (result.data.length === 0) {
+          return {
+            content: [{ type: 'text', text: 'No documents found.' }],
+          };
+        }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: 'Global document search is not supported by Boond API. Retrieve documents from an owning record (for example a candidate, resource, company, project, or contract), then fetch the document by its ID with boond_documents_get.',
-          },
-        ],
-        isError: true,
-      };
+        const documents = result.data.map(formatDocument);
+        const summary = `Found ${result.data.length} document(s) (Page ${result.pagination.page}/${Math.ceil(result.pagination.total / result.pagination.limit)} of ${result.pagination.total} total)`;
+
+        return {
+          content: [{ type: 'text', text: `${summary}\n\n${documents.join('\n\n')}` }],
+        };
+      } catch (error) {
+        return handleToolError(error, 'searching', 'documents');
+      }
     }
   );
 
@@ -162,16 +170,21 @@ export function registerDocumentTools(server: McpServer, client: BoondAPIClient)
   server.registerTool(
     'boond_documents_download',
     {
-      description: 'Get document download URL',
+      description: 'Get document download URL and metadata',
       annotations: READ_TOOL_ANNOTATIONS,
       inputSchema: documentIdSchema.shape,
     },
     async params => {
       try {
         const validated = documentIdSchema.parse(params);
-        const doc = await client.getDocument(validated.id);
+        const download = await client.downloadDocument(validated.id);
 
-        const text = `📥 Download: ${doc.name}\nURL: ${doc.url}\nType: ${doc.type}\nSize: ${(doc.size / 1024).toFixed(2)} KB`;
+        const text = [
+          '📥 Document Download',
+          `Filename: ${download.filename}`,
+          `URL: ${download.url}`,
+          `Content-Type: ${download.contentType}`,
+        ].join('\n');
 
         return {
           content: [{ type: 'text', text }],

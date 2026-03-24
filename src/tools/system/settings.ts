@@ -69,21 +69,7 @@ export function registerSettingTools(server: McpServer, client: BoondAPIClient):
     async params => {
       try {
         const validated = settingIdSchema.parse(params);
-        const result = await client.searchSettings();
-        const setting = result.data.find(s => s.id === validated.id);
-
-        if (!setting) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Setting not found`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
+        const setting = await client.getSetting(validated.id);
         const text = formatSetting(setting);
 
         return {
