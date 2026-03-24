@@ -1772,7 +1772,6 @@ export class BoondAPIClient {
       contentType: 'application/octet-stream',
       filename: `document-${id}`,
     };
-    }
   }
 
   // ============================================================================
